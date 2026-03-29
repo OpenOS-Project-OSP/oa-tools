@@ -11,7 +11,7 @@
     { 
       "command": "action_iso", 
       "volume_id": "VITELLUS",
-      "filename": "egg-of_debian-trixie-vitellus_amd64.iso" 
+      "filename": "egg-of_debian-trixie-colibri_amd64.iso" 
     },
     { "command": "action_cleanup" }
   ]
