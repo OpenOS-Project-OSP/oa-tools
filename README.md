@@ -134,3 +134,5 @@ This created a unique linguistic pocket: while Rome's dialect evolved toward a T
 When I started penguins-eggs, I explored the landscape of the time, studying Systemback and Remastersys, before finally discovering refracta-snapshot, which I used as my starting point. For years, I believed mx-snapshot was a sort of "cousin" based on Refracta. However, about 10 years later, I discovered a deeper truth directly from Adrian himself: mx-snapshot was the true ancestor. I had believed it was based on refracta-snapshot, but it was actually the other way around.
 
 Most importantly, I later re-adopted the core concept that had been set aside in Refracta: the avoidance of copying the live running filesystem. I achieved this by implementing it through a different, modern path: OverlayFS.
+
+[Philosofy](https://penguins-eggs.net/blog/eggs-bananas).
