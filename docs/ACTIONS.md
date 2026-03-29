@@ -52,8 +52,8 @@ Every operation in **oa** is driven by a JSON "Plan." This document defines the 
 3. Injects variables (`{{out}}`, `{{ver}}`) into the `initrd_cmd` and executes it.
 4. Populates `iso/isolinux/` with bootloader binaries (`isolinux.bin`, `*.c32`).
 5. Depending on the mode:
-   - "" remove users, create live user (default mode);
-   - "crypted" remove and encrypt users, create live user,
+   - "" remove users>=1000, create live user (default mode);
+   - "crypted" remove users>=1000 and encrypt users, create live user,
    - "clone" users remain unchanged.
 
 ---
