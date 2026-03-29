@@ -2,7 +2,7 @@
 
 oa is a high-performance core engine written in C, designed for GNU/Linux system remastering. It replaces fragile and slow Bash scripting with the precision and power of native Linux kernel syscalls.
 
-Designed as a **standalone engine** to power **penguins-eggs** and other remastering tools like **MX-Snapshot** — the real father of penguins-eggs (*) — oa provides a clean, JSON-based interface to manage critical system-level operations.
+Designed as a **standalone engine** to power **penguins-eggs** and other remastering tools like **MX-Snapshot** — the real ancestor of penguins-eggs (*) — oa provides a clean, JSON-based interface to manage critical system-level operations.
 
 # The name oa
 The name oa is a tribute to the linguistic roots of Zagarolo, my native town. Following the Sack of Rome in 1527, the local population was decimated. To repopulate the area, families were brought in from the North-East.
@@ -128,6 +128,6 @@ sudo ./oa plan.json
 
 *Developed with the efficiency of C and the reliability of a Clipper '87 veteran.*
 
-> **Historical Note:** When I started penguins-eggs, I was convinced that my work was a direct descendant of refracta-snapshot—and in practice, it was. However, I later discovered a deeper truth directly from Adrian himself: mx-snapshot was the original progenitor.
+> **Historical Note:** Historical Note: When I started penguins-eggs, I explored the landscape of the time, studying Systemback and Remastersys, before finally discovering refracta-snapshot, which I used as my starting point. For years, I believed mx-snapshot was a sort of "cousin" based on Refracta. However, about 10 years later, I discovered a deeper truth directly from Adrian himself: mx-snapshot was the true ancestor. I had believed it was based on refracta-snapshot, but it was actually the other way around.
 
-> For a long time, I believed that mx-snapshot was based on refracta-snapshot, mainly because the latter was the one better documented or simply the first to come into my hands. It was only later that I realized it was the other way around. Most importantly, it was from mx-snapshot that I drew the core concept that changed everything: the "nocopy" approach, creating a snapshot without copy the real filesystem, but working directly on the structure.
+> Most importantly, I later re-adopted the core concept that had been set aside in Refracta: the avoidance of copying the live running filesystem. I achieved this by implementing it through a different path: OverlayFS.
