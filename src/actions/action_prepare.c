@@ -43,6 +43,9 @@ static int fortified_bind_mount(const char *src, const char *tgt,
   return 0;
 }
 
+/**
+ * action_prepare
+ */
 int action_prepare(cJSON *json) {
   cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(json, "pathLiveFs");
   if (!cJSON_IsString(pathLiveFs))
