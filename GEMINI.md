@@ -1,6 +1,8 @@
-# oa: un motore in C per il remastering
+# progetto: oa un motore in C per il remastering
 
-Il progetto è nato dalla scoperta di MX-arch di AdrianMX segnalatami da un sul mio gruppo telegram: https://t.me/penguins_eggs da cui è scaturita una proposta ad AdrianTX stesso https://github.com/AdrianTM/mx-snapshot/issues/20 e che mi ha spiegato che il suo tool MX-snapshot è il vero antenato sia di penguins-eggs che di refracta-snapshot
+oa is a high-performance core engine written in C, designed for GNU/Linux system remastering. It replaces fragile and slow Bash scripting with the precision and power of native Linux kernel syscalls.
+
+Designed as a **standalone engine** to power **penguins-eggs** and other remastering tools like **MX-Snapshot** — the real ancestor of penguins-eggs (*) — oa provides a clean, JSON-based interface to manage critical system-level operations.
 
 ## Filosofia
 - usiamo OverlayFS per proiettare il filestem reale nella liveroot e renderla scrivibile (come in [penguins-eggs](https://github.com/pieroproietti/penguins-eggs));
