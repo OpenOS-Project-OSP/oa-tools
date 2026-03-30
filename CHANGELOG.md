@@ -7,9 +7,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 - **Modular Architecture**: Decoupled core logic into `src/actions/`, making the project significantly more scalable and maintainable.
 - **Execution Engine**: Implemented the `execute_verb` dispatch system in `main.c` to process the `plan.json` workflow.
-- **Parameter Inheritance**: Added dual-pointer support (`cJSON *root` and `cJSON *task`) allowing actions to access both Global settings and Local task overrides.
+- TODO: **Parameter Inheritance**: Added dual-pointer support (`cJSON *root` and `cJSON *task`) allowing actions to access both Global settings and Local task overrides.
 - **Dynamic Initrd Action**: Support for command templates using `{{out}}` and `{{ver}}` placeholders for flexible initramfs generation.
-- **System User Discovery**: Added `action_users` to scan for "human" users (UID >= 1000) using the POSIX `getpwent()` API.
+- TODO: **System User Discovery**: Added `action_users` to scan for "human" users (UID >= 1000) using the POSIX `getpwent()` API.
 
 ### Changed
 - **Buffer Hardening**: Introduced `PATH_SAFE` (8192) and `CMD_MAX` (32768) constants in `oa.h` to ensure safety during complex `system()` command construction.
