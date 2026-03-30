@@ -1,10 +1,12 @@
-# progetto: oa un motore in C per il remastering
+# Un motore in C per il remastering
 
 oa is a high-performance core engine written in C, designed for GNU/Linux system remastering. It replaces fragile and slow Bash scripting with the precision and power of native Linux kernel syscalls.
 
+oa -the name - is simply my dialect word for eggs, and is short, perfect for the purpoise.
+
 Designed as a **standalone engine** to power **penguins-eggs** and other remastering tools like **MX-Snapshot** — the real ancestor of penguins-eggs (*) — oa provides a clean, JSON-based interface to manage critical system-level operations.
 
-the name oa is simply my dialect word for eggs.
+
 
 ## Filosofia
 - usiamo OverlayFS per proiettare il filestem reale nella liveroot e renderla scrivibile (come in [penguins-eggs](https://github.com/pieroproietti/penguins-eggs));
