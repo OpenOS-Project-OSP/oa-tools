@@ -8,21 +8,21 @@
 #include "oa.h"
 
 /**
- * @brief Finalizza la ISO avviabile
+ * @brief Finalizza la ISO avviabile usando il contesto globale/locale
  */
-#include "oa.h"
+int action_iso(OA_Context *ctx) {
+    // 1. Lookup Strategico: Locale (task) > Globale (root)
+    cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(ctx->task, "pathLiveFs");
+    if (!pathLiveFs) pathLiveFs = cJSON_GetObjectItemCaseSensitive(ctx->root, "pathLiveFs");
 
-/**
- * @brief Finalizza la ISO avviabile
- */
-int action_iso(cJSON *json) {
-    // Cerchiamo le chiavi ESATTE che sono nel tuo plan.json
-    cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(json, "pathLiveFs");
-    cJSON *volid = cJSON_GetObjectItemCaseSensitive(json, "volid");      // Corretto da volume_id
-    cJSON *output_iso = cJSON_GetObjectItemCaseSensitive(json, "output_iso"); // Corretto da filename
+    cJSON *volid = cJSON_GetObjectItemCaseSensitive(ctx->task, "volid");
+    if (!volid) volid = cJSON_GetObjectItemCaseSensitive(ctx->root, "volid");
+
+    cJSON *output_iso = cJSON_GetObjectItemCaseSensitive(ctx->task, "output_iso");
+    if (!output_iso) output_iso = cJSON_GetObjectItemCaseSensitive(ctx->root, "output_iso");
 
     if (!cJSON_IsString(pathLiveFs)) {
-        fprintf(stderr, "{\"error\": \"pathLiveFs mancante nell'azione ISO\"}\n");
+        fprintf(stderr, "{\"error\": \"pathLiveFs mancante nel contesto ISO\"}\n");
         return 1;
     }
 
@@ -30,7 +30,7 @@ int action_iso(cJSON *json) {
     
     // Definiamo la sorgente (cartella iso)
     snprintf(iso_root, sizeof(iso_root), "%s/iso", pathLiveFs->valuestring);
-    
+
     // Definiamo la destinazione (file .iso)
     snprintf(output_iso_path, sizeof(output_iso_path), "%s/%s", 
              pathLiveFs->valuestring, 
@@ -51,6 +51,6 @@ int action_iso(cJSON *json) {
 
     printf("\n\033[1;32m[oa ISO Mode]\033[0m Finalizing ISO: %s\n", 
            cJSON_IsString(output_iso) ? output_iso->valuestring : "live-system.iso");
-           
+
     return system(cmd);
 }

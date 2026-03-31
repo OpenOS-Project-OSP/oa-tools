@@ -6,10 +6,16 @@ CONTEXT="CONTEXT_${RAND_SUFFIX}.txt"
   echo '````'
   for f in  context.sh \
             CHANGELOG.md \
-            README.md \
+            Makefile \
             include/oa.h \
             include/oe-yocto.h \
-            src/main.c \
+            json/cleanup.json  \
+            json/exclude.json  \
+            json/iso.json  \
+            json/prepare.json  \
+            json/run.json  \
+            json/users.json \
+            README.md \
             src/actions/action_initrd.c \
             src/actions/action_iso.c \
             src/actions/action_prepare.c \
@@ -18,13 +24,8 @@ CONTEXT="CONTEXT_${RAND_SUFFIX}.txt"
             src/actions/action_scan.c \
             src/actions/action_squash.c \
             src/actions/action_users.c \
-            json/cleanup.json  \
-            json/exclude.json  \
-            json/iso.json  \
-            json/prepare.json  \
-            json/run.json  \
-            json/users.json \
-            vendors/oe-yocto.c \
+            src/main.c \
+            src/vendors/oe-yocto.c \
             ; 
     do
     if [ -f "$f" ]; then

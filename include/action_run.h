@@ -8,8 +8,7 @@
 #ifndef ACTION_RUN_H
 #define ACTION_RUN_H
 
-#include "cJSON.h"
-
-int action_run(cJSON *json);
+#include "oa.h"
+int action_run(OA_Context *ctx);
 
 #endif

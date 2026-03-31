@@ -8,12 +8,8 @@
 #ifndef ACTION_PREPARE_H
 #define ACTION_PREPARE_H
 
-#include "cJSON.h"
-
-// La funzione che prepara i mount
-int action_prepare(cJSON *json);
-
-// La funzione che pulisce tutto (Aggiungi questa riga!)
-int action_cleanup(cJSON *json);
+#include "oa.h"
+int action_prepare(OA_Context *ctx);
+int action_cleanup(OA_Context *ctx);
 
 #endif

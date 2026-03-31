@@ -1,10 +1,37 @@
 {
   "pathLiveFs": "/home/eggs",
-  "mode": "",
+  "mode": "standard",
   "initrd_cmd": "mkinitramfs -o {{out}} {{ver}}",
+  "users": [
+    {
+      "login": "live",
+      "password": "evolution",
+      "gecos": "live,,,",
+      "home": "/home/live",
+      "shell": "/bin/bash",
+      "groups": [
+        "cdrom",
+        "floppy",
+        "sudo",
+        "audio",
+        "dip",
+        "video",
+        "plugdev",
+        "netdev",
+        "autologin"
+      ]
+    }
+  ],
   "plan": [
     {
       "command": "action_prepare"
+    },
+    {
+      "command": "action_users"
+    },
+    {
+      "command": "action_pause",
+      "message": "UTENTI CREATI: Verifica che /etc/passwd contenga l'utente live con UID 1000."
     },
     {
       "command": "action_initrd"

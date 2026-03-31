@@ -8,6 +8,63 @@
 #include "oa.h"
 
 /**
+ * @brief Scrive una riga in formato passwd (USER:x:UID:GID:GECOS:HOME:SHELL)
+ */
+void yocto_write_passwd(FILE *f, const char *user, int uid, int gid, const char *gecos, const char *home, const char *shell) {
+    if (f) fprintf(f, "%s:x:%d:%d:%s:%s:%s\n", user, uid, gid, gecos, home, shell);
+}
+
+/**
+ * @brief Scrive una riga in formato shadow (USER:PASS:LAST:MIN:MAX:WARN:INACT:EXP:RES)
+ */
+void yocto_write_shadow(FILE *f, const char *user, const char *enc_pass) {
+    // 19750 è un valore di last_change approssimativo per il 2024+
+    if (f) fprintf(f, "%s:%s:19750:0:99999:7:::\n", user, enc_pass);
+}
+
+/**
+ * @brief Scrive una riga in formato group (GROUP:x:GID:USERS)
+ */
+void yocto_write_group(FILE *f, const char *group, int gid, const char *users) {
+    if (f) fprintf(f, "%s:x:%d:%s\n", group, gid, users ? users : "");
+}
+
+/**
+ * @brief Filtra un file di testo (passwd/group) rimuovendo gli UID/GID umani
+ */
+int yocto_sanitize_file(const char *src_path, int min_id, int max_id) {
+    char tmp_path[PATH_SAFE];
+    snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", src_path);
+
+    FILE *src = fopen(src_path, "r");
+    FILE *dst = fopen(tmp_path, "w");
+    if (!src || !dst) return -1;
+
+    char line[PATH_SAFE];
+    while (fgets(line, sizeof(line), src)) {
+
+        char line_copy[PATH_SAFE];
+        strcpy(line_copy, line);
+
+        strtok(line_copy, ":");           // Salta il nome (era 'name')
+        strtok(NULL, ":");                // Salta la password (era 'pass')
+        char *id_str = strtok(NULL, ":"); // Questo ci serve per l'ID
+
+        if (id_str) {
+            int id = atoi(id_str);
+            // Se l'ID è fuori dal range umano (OE-Core), preserviamo la riga
+            if (id < min_id || id > max_id) {
+                fputs(line, dst);
+            }
+        }
+    }
+
+    fclose(src);
+    fclose(dst);
+    return rename(tmp_path, src_path);
+}
+
+/**
  * @brief Verifica se il percorso della home è in una whitelist di sistema.
  */
 static bool is_path_allowed(const char *home) {

@@ -8,9 +8,7 @@
 #ifndef ACTION_INITRD_H
 #define ACTION_INITRD_H
 
-#include "cJSON.h"
-
-// Prototipo dell'azione
-int action_initrd(cJSON *json);
+#include "oa.h"
+int action_initrd(OA_Context *ctx);
 
 #endif

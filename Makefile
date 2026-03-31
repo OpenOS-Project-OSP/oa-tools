@@ -1,28 +1,25 @@
-CC = gcc
-# -Iinclude: fondamentale per trovare cJSON.h e gli altri
-CFLAGS = -Wall -Wextra -Iinclude -D_GNU_SOURCE
+	CC = gcc
+# Usiamo += per aggiungere opzioni senza cancellare quelle precedenti
+CFLAGS = -Wall -Wextra -Iinclude -D_GNU_SOURCE -Wno-format-truncation
 LDFLAGS = -lm
 
-# 1. Trova tutti i file .c ricorsivamente dentro src/
+# 1. Trova tutti i file .c ricorsivamente
 SOURCES = $(shell find src -name '*.c')
 
-# 2. Trasforma i percorsi dei sorgenti in percorsi per gli oggetti
-# Es: src/actions/action_iso.c -> obj/actions/action_iso.o
+# 2. Genera i nomi degli oggetti
 OBJECTS = $(SOURCES:src/%.c=obj/%.o)
 
 TARGET = oa
 
 all: $(TARGET)
 
-# Regola per il linking finale
 $(TARGET): $(OBJECTS)
 	@echo "  LD    $@"
 	@$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 	@echo "--------------------------------------"
 	@echo "Build completata con successo: ./$(TARGET)"
 
-# Regola magica per la compilazione
-# @mkdir -p crea le sottocartelle in obj/ se non esistono
+# Creazione cartelle e compilazione
 obj/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	@echo "  CC    $<"
@@ -33,7 +30,3 @@ clean:
 	@rm -rf obj $(TARGET)
 
 .PHONY: all clean
-
-
-# Aggiungi -Wno-format-truncation alla fine
-CFLAGS = -Wall -Wextra -Iinclude -D_GNU_SOURCE -Wno-format-truncation

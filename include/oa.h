@@ -36,17 +36,22 @@
 // da rimuovere in futuro
 #define PATH_SAFE 8192        // Il doppio di PATH_MAX: ora GCC non ha più dubbi
 
-// --- Prototipi (Ereditati da helpers e actions) ---
-void build_initrd_command(char *dest, const char *template, const char *out, const char *ver);
-void append_eggs_exclusion(char *buffer, size_t buf_size, const char *path);
+// OA_context
+typedef struct {
+    cJSON *root;    // Il JSON intero (configurazione globale) 
+    cJSON *task;    // Il comando specifico nel plan (configurazione locale) 
+} OA_Context;
 
-int action_prepare(cJSON *json);
-int action_cleanup(cJSON *json);
-int action_initrd(cJSON *json);
-int action_remaster(cJSON *json);
-int action_run(cJSON *json);
-int action_scan(cJSON *json);
-int action_squash(cJSON *json);
-int action_iso(cJSON *json);
+// --- Prototipi Aggiornati ---
+int action_prepare(OA_Context *ctx);
+int action_cleanup(OA_Context *ctx);
+int action_initrd(OA_Context *ctx);
+int action_remaster(OA_Context *ctx);
+int action_run(OA_Context *ctx);
+int action_scan(OA_Context *ctx);
+int action_squash(OA_Context *ctx);
+int action_iso(OA_Context *ctx);
+int action_pause(OA_Context *ctx);
+int action_users(OA_Context *ctx); 
 
 #endif

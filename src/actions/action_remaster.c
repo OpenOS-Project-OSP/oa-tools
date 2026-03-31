@@ -10,13 +10,19 @@
 /**
  * @brief Prepara la struttura della ISO, copia il kernel e configura il bootloader
  */
-int action_remaster(cJSON *json) {
-    cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(json, "pathLiveFs");
-    cJSON *mode_item = cJSON_GetObjectItemCaseSensitive(json, "mode");
+int action_remaster(OA_Context *ctx) {
+    // Lookup dei parametri: Locale (task) > Globale (root)
+    cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(ctx->task, "pathLiveFs");
+    if (!pathLiveFs) pathLiveFs = cJSON_GetObjectItemCaseSensitive(ctx->root, "pathLiveFs");
+
+    cJSON *mode_item = cJSON_GetObjectItemCaseSensitive(ctx->task, "mode");
+    if (!mode_item) mode_item = cJSON_GetObjectItemCaseSensitive(ctx->root, "mode");
     
     if (!cJSON_IsString(pathLiveFs)) return 1;
 
     const char *mode = (cJSON_IsString(mode_item)) ? mode_item->valuestring : "";
+    
+    // Il resto del codice rimane invariato, usando pathLiveFs->valuestring e mode
     char iso_dir[4096], live_dir[4096], liveroot_dir[4096], isolinux_dir[4096];
     snprintf(iso_dir, PATH_SAFE, "%s/iso", pathLiveFs->valuestring);
     snprintf(live_dir, PATH_SAFE, "%s/iso/live", pathLiveFs->valuestring);
@@ -72,9 +78,6 @@ int action_remaster(cJSON *json) {
         printf("\033[1;32m[oa]\033[0m Mode CLONE: Users will be preserved.\n");
     } else {
         printf("\033[1;34m[oa]\033[0m Cleaning up host users (UID >= 1000) in liveroot...\n");
-        snprintf(cmd, sizeof(cmd), "chroot %s /bin/bash -c \"awk -F: '$3 >= 1000 && $3 < 60000 {print $1}' /etc/passwd | xargs -r -n1 userdel -r -f\"", liveroot_dir);
-        system(cmd);
-
         if (strcmp(mode, "crypted") == 0) {
             printf("\033[1;35m[oa]\033[0m Mode CRYPTED: Applying encryption logic...\n");
         }

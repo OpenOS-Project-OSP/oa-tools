@@ -1,87 +1,74 @@
 /*
-* src/actions/action_users.c
-* Remastering core: User & Group Identity artisan
-* oa: eggs in my dialect🥚🥚
-*
-* Author: Piero Proietti <piero.proietti@gmail.com>
-* License: GPL-3.0-or-later
-*/
-#include "oa.h"
-#include <pwd.h>
-#include <grp.h>
-
-/**
- * @brief action_users
- * Gestisce la pulizia degli utenti host e la creazione dell'identità live.
+ * src/actions/action_users.c
+ * Remastering core: User & Group Identity artisan
+ * oa: eggs in my dialect🥚🥚
+ *
+ * Author: Piero Proietti <piero.proietti@gmail.com>
+ * License: GPL-3.0-or-later
  */
-int action_users(cJSON *json) {
-    cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(json, "pathLiveFs");
-    cJSON *mode_item = cJSON_GetObjectItemCaseSensitive(json, "mode"); 
-    cJSON *users_array = cJSON_GetObjectItemCaseSensitive(json, "users");
+#include "oa.h"
 
-    if (!cJSON_IsString(pathLiveFs)) {
-        fprintf(stderr, "{\"error\": \"pathLiveFs missing in action_users\"}\n");
-        return 1;
-    }
+int action_users(OA_Context *ctx) {
+    // 1. Lookup a cascata (percorso, utenti, modalità)
+    cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(ctx->task, "pathLiveFs");
+    if (!pathLiveFs) pathLiveFs = cJSON_GetObjectItemCaseSensitive(ctx->root, "pathLiveFs");
+    cJSON *users = cJSON_GetObjectItemCaseSensitive(ctx->task, "users");
+    if (!users) users = cJSON_GetObjectItemCaseSensitive(ctx->root, "users");
+    cJSON *mode_item = cJSON_GetObjectItemCaseSensitive(ctx->task, "mode");
+    if (!mode_item) mode_item = cJSON_GetObjectItemCaseSensitive(ctx->root, "mode");
+
+    if (!cJSON_IsString(pathLiveFs)) return 1;
+
+    char liveroot[PATH_SAFE], p_path[PATH_SAFE], s_path[PATH_SAFE], g_path[PATH_SAFE];
+    snprintf(liveroot, sizeof(liveroot), "%s/liveroot", pathLiveFs->valuestring);
+    snprintf(p_path, sizeof(p_path), "%s/etc/passwd", liveroot);
+    snprintf(s_path, sizeof(s_path), "%s/etc/shadow", liveroot);
+    snprintf(g_path, sizeof(g_path), "%s/etc/group", liveroot);
 
     const char *mode = cJSON_IsString(mode_item) ? mode_item->valuestring : "standard";
-    char liveroot[PATH_SAFE];
-    snprintf(liveroot, PATH_SAFE, "%s/liveroot", pathLiveFs->valuestring);
 
-    // 1. FASE DI PULIZIA (Se non siamo in modalità CLONE)
-    if (strcmp(mode, "clone") != 0) { 
-        printf("\033[1;34m[oa]\033[0m Mode %s: Purging host users from liveroot...\n", mode);
-        
-        char cmd[CMD_MAX];
-        snprintf(cmd, sizeof(cmd), 
-                 "chroot %s /bin/bash -c \"awk -F: '$3 >= %d && $3 <= %d {print $1}' /etc/passwd | xargs -r -n1 userdel -r -f\"", 
-                 liveroot, OE_UID_HUMAN_MIN, OE_UID_HUMAN_MAX);
-        system(cmd);
+    // 2. PULIZIA: Rimuoviamo gli utenti host (UID/GID 1000-59999)
+    if (strcmp(mode, "clone") != 0) {
+        printf("\033[1;34m[oa]\033[0m Purging host identities...\n");
+        yocto_sanitize_file(p_path, OE_UID_HUMAN_MIN, OE_UID_HUMAN_MAX); // passwd
+        // yocto_sanitize_file(s_path, OE_UID_HUMAN_MIN, OE_UID_HUMAN_MAX); // shadow
+        yocto_sanitize_file(g_path, OE_UID_HUMAN_MIN, OE_UID_HUMAN_MAX); // group
     }
 
-    // 2. FASE DI CREAZIONE (Identità Live dal JSON)
-    if (cJSON_IsArray(users_array)) {
-        cJSON *u;
-        cJSON_ArrayForEach(u, users_array) {
-            cJSON *login_obj = cJSON_GetObjectItemCaseSensitive(u, "login");
-            cJSON *home_obj = cJSON_GetObjectItemCaseSensitive(u, "home");
-            cJSON *groups = cJSON_GetObjectItemCaseSensitive(u, "groups");
+    // 3. SCRITTURA: Creazione identità live tramite le tue funzioni vendors
+    if (cJSON_IsArray(users)) {
+        FILE *fp = fopen(p_path, "a");
+        FILE *fs = fopen(s_path, "a");
+        if (!fp || !fs) { if(fp) fclose(fp); if(fs) fclose(fs); return 1; }
 
-            if (!cJSON_IsString(login_obj) || !cJSON_IsString(home_obj)) continue;
+        cJSON *u;
+        cJSON_ArrayForEach(u, users) {
+            cJSON *login_obj = cJSON_GetObjectItemCaseSensitive(u, "login");
+            cJSON *pass_obj = cJSON_GetObjectItemCaseSensitive(u, "password");
+            cJSON *home_obj = cJSON_GetObjectItemCaseSensitive(u, "home");
+            cJSON *shell_obj = cJSON_GetObjectItemCaseSensitive(u, "shell");
+            cJSON *gecos_obj = cJSON_GetObjectItemCaseSensitive(u, "gecos");
+
+            if (!login_obj || !pass_obj || !home_obj) continue;
 
             const char *login = login_obj->valuestring;
+            const char *pass = pass_obj->valuestring;
             const char *home = home_obj->valuestring;
+            const char *shell = shell_obj ? shell_obj->valuestring : "/bin/bash";
+            const char *gecos = gecos_obj ? gecos_obj->valuestring : "live,,,";
 
-            // Validazione Yocto-Style prima di procedere
-            if (!yocto_is_human_user(OE_UID_HUMAN_MIN, home)) {
-                printf("\033[1;33m[oa]\033[0m User %s ignored (Path not allowed or missing home)\n", login);
-                continue;
-            }
+            printf("\033[1;32m[oa]\033[0m Handcrafting identity: %s\n", login);
 
-            printf("\033[1;32m[oa]\033[0m Crafting user identity: %s\n", login);
+            yocto_write_passwd(fp, login, 1000, 1000, gecos, home, shell);
+            yocto_write_shadow(fs, login, pass);
 
-            // Gestione Gruppi: Rilevamento dinamico GID dall'host
-            if (cJSON_IsArray(groups)) {
-                cJSON *g_node;
-                cJSON_ArrayForEach(g_node, groups) {
-                    if (!cJSON_IsString(g_node)) continue;
-
-                    struct group *gr = getgrnam(g_node->valuestring);
-                    if (gr) {
-                        char gr_cmd[CMD_MAX];
-                        // Crea il gruppo se non esiste con lo stesso GID dell'host
-                        snprintf(gr_cmd, sizeof(gr_cmd), "chroot %s groupadd -g %d %s || true", 
-                                 liveroot, gr->gr_gid, g_node->valuestring);
-                        system(gr_cmd);
-                        
-                        // Aggiunge l'utente al gruppo
-                        snprintf(gr_cmd, sizeof(gr_cmd), "chroot %s usermod -aG %s %s", 
-                                 liveroot, g_node->valuestring, login);
-                        system(gr_cmd);
-                    }
-                }
-            }
+            char home_cmd[CMD_MAX];
+            snprintf(home_cmd, sizeof(home_cmd), "mkdir -p %s%s && chown 1000:1000 %s%s", 
+                     liveroot, home, liveroot, home);
+            system(home_cmd);
         }
+        fclose(fp);
+        fclose(fs);
     }
 
     printf("{\"status\": \"ok\", \"action\": \"users_complete\"}\n");

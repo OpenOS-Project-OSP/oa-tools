@@ -1,10 +1,10 @@
 /*
-* oa: eggs in my dialect🥚🥚
-* remastering core
-*
-* Author: Piero Proietti <piero.proietti@gmail.com>
-* License: GPL-3.0-or-later
-*/
+ * oa: eggs in my dialect🥚🥚
+ * remastering core
+ *
+ * Author: Piero Proietti <piero.proietti@gmail.com>
+ * License: GPL-3.0-or-later
+ */
 #include "oa.h"
 
 // Helper per leggere il file JSON
@@ -23,30 +23,28 @@ char *read_file(const char *filename) {
     return data;
 }
 
-// Il "Vigile Urbano": smista i verbi ai vari moduli
-int execute_verb(cJSON *task) {
+// Il "Vigile Urbano": smista i verbi ai vari moduli tramite OA_Context
+int execute_verb(cJSON *root, cJSON *task) {
     cJSON *command = cJSON_GetObjectItemCaseSensitive(task, "command");
     if (!cJSON_IsString(command) || (command->valuestring == NULL))
         return 1;
 
-    // Branding aggiornato a [oa]
+    // CREAZIONE DEL CONTESTO (Puntatori a Global + Local)
+    OA_Context ctx = { .root = root, .task = task };
+
     printf("\033[1;34m[oa]\033[0m Executing action '%s'...\n", command->valuestring);
 
-    // Mappatura comandi
-    if (strcmp(command->valuestring, "action_prepare") == 0)
-        return action_prepare(task);
-    if (strcmp(command->valuestring, "action_initrd") == 0)
-        return action_initrd(task);
-    if (strcmp(command->valuestring, "action_remaster") == 0) 
-        return action_remaster(task); 
-    if (strcmp(command->valuestring, "action_cleanup") == 0)
-        return action_cleanup(task);
-    if (strcmp(command->valuestring, "action_run") == 0)
-        return action_run(task);
-    if (strcmp(command->valuestring, "action_squash") == 0)
-        return action_squash(task);
-    if (strcmp(command->valuestring, "action_iso") == 0)
-        return action_iso(task);
+    // Mappatura comandi: tutte le azioni ora ricevono solo il puntatore a ctx
+    if (strcmp(command->valuestring, "action_prepare") == 0)  return action_prepare(&ctx);
+    if (strcmp(command->valuestring, "action_users") == 0)    return action_users(&ctx);
+    if (strcmp(command->valuestring, "action_initrd") == 0)   return action_initrd(&ctx);
+    if (strcmp(command->valuestring, "action_remaster") == 0) return action_remaster(&ctx);
+    if (strcmp(command->valuestring, "action_squash") == 0)   return action_squash(&ctx);
+    if (strcmp(command->valuestring, "action_iso") == 0)      return action_iso(&ctx);
+    if (strcmp(command->valuestring, "action_pause") == 0)    return action_pause(&ctx);
+    if (strcmp(command->valuestring, "action_cleanup") == 0)  return action_cleanup(&ctx);
+    if (strcmp(command->valuestring, "action_run") == 0)      return action_run(&ctx);
+    if (strcmp(command->valuestring, "action_scan") == 0)     return action_scan(&ctx);
 
     fprintf(stderr, "{\"error\": \"Unknown command '%s'\"}\n", command->valuestring);
     return 1;
@@ -72,43 +70,22 @@ int main(int argc, char *argv[]) {
     }
 
     cJSON *plan = cJSON_GetObjectItemCaseSensitive(json, "plan");
-    
-    // Parametri Globali per l'ereditarietà
-    cJSON *global_path = cJSON_GetObjectItemCaseSensitive(json, "pathLiveFs");
-    cJSON *global_mode = cJSON_GetObjectItemCaseSensitive(json, "mode");
-    cJSON *global_initrd = cJSON_GetObjectItemCaseSensitive(json, "initrd_cmd");
-
     int final_status = 0;
 
     // --- LOGICA DEL PIANO DI VOLO ---
     if (cJSON_IsArray(plan)) {
         cJSON *task;
         cJSON_ArrayForEach(task, plan) {
-            
-            // 1. Ereditarietà pathLiveFs
-            if (global_path && !cJSON_GetObjectItemCaseSensitive(task, "pathLiveFs")) {
-                cJSON_AddItemToObject(task, "pathLiveFs", cJSON_Duplicate(global_path, 1));
-            }
-
-            // 2. Ereditarietà mode (fondamentale per remaster e squash)
-            if (global_mode && !cJSON_GetObjectItemCaseSensitive(task, "mode")) {
-                cJSON_AddItemToObject(task, "mode", cJSON_Duplicate(global_mode, 1));
-            }
-
-            // 3. Ereditarietà initrd_cmd
-            if (global_initrd && !cJSON_GetObjectItemCaseSensitive(task, "initrd_cmd")) {
-                cJSON_AddItemToObject(task, "initrd_cmd", cJSON_Duplicate(global_initrd, 1));
-            }
-
-            if (execute_verb(task) != 0) {
-                fprintf(stderr, "{\"status\": \"halted\", \"error\": \"Plan failed at task\"}\n");
+            // Esecuzione pulitissima: passiamo il root (json) e il task corrente
+            if (execute_verb(json, task) != 0) {
+                fprintf(stderr, "{\"status\": \"halted\", \"error\": \"Plan failed\"}\n");
                 final_status = 1;
-                break; 
+                break;
             }
         }
     } else {
-        // Fallback per comando singolo
-        final_status = execute_verb(json);
+        // Fallback per comando singolo (root e task coincidono)
+        final_status = execute_verb(json, json);
     }
 
     cJSON_Delete(json);

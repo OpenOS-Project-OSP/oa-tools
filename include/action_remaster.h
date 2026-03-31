@@ -8,8 +8,7 @@
 #ifndef ACTION_REMASTER_H
 #define ACTION_REMASTER_H
 
-#include "cJSON.h"
-
-int action_remaster(cJSON *json);
+#include "oa.h"
+int action_remaster(OA_Context *ctx);
 
 #endif

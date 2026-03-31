@@ -1,0 +1,14 @@
+{
+  "command": "action_users"
+},
+{
+  "command": "action_pause",
+  "message": "UTENTI CREATI: Verifica che /etc/passwd contenga l'utente live con UID 1000."
+},
+{
+  "command": "action_remaster"
+},
+{
+  "command": "action_pause",
+  "message": "SKELETON PRONTO: Controlla che vmlinuz sia presente in iso/live/."
+}

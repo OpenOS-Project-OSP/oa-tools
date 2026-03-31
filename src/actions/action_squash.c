@@ -11,17 +11,27 @@
 /**
  * @brief Crea il filesystem compresso SquashFS
  */
-int action_squash(cJSON *json) {
-    cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(json, "pathLiveFs");
-    cJSON *comp = cJSON_GetObjectItemCaseSensitive(json, "compression");
-    cJSON *comp_lvl = cJSON_GetObjectItemCaseSensitive(json, "compression_level");
-    cJSON *exclude_file = cJSON_GetObjectItemCaseSensitive(json, "exclude_list");
-    cJSON *mode_item = cJSON_GetObjectItemCaseSensitive(json, "mode");
+int action_squash(OA_Context *ctx) {
+    // Lookup intelligente dei parametri
+    cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(ctx->task, "pathLiveFs");
+    if (!pathLiveFs) pathLiveFs = cJSON_GetObjectItemCaseSensitive(ctx->root, "pathLiveFs");
+
+    cJSON *comp = cJSON_GetObjectItemCaseSensitive(ctx->task, "compression");
+    if (!comp) comp = cJSON_GetObjectItemCaseSensitive(ctx->root, "compression");
+
+    cJSON *comp_lvl = cJSON_GetObjectItemCaseSensitive(ctx->task, "compression_level");
+    if (!comp_lvl) comp_lvl = cJSON_GetObjectItemCaseSensitive(ctx->root, "compression_level");
+
+    cJSON *exclude_file = cJSON_GetObjectItemCaseSensitive(ctx->task, "exclude_list");
+    if (!exclude_file) exclude_file = cJSON_GetObjectItemCaseSensitive(ctx->root, "exclude_list");
+
+    cJSON *mode_item = cJSON_GetObjectItemCaseSensitive(ctx->task, "mode");
+    if (!mode_item) mode_item = cJSON_GetObjectItemCaseSensitive(ctx->root, "mode");
 
     if (!cJSON_IsString(pathLiveFs)) return 1;
 
+    // Da qui in poi la logica rimane la stessa, usando i puntatori estratti sopra
     const char *mode = (cJSON_IsString(mode_item)) ? mode_item->valuestring : "";
-
     char final_exclude_path[PATH_SAFE] = "";
     if (cJSON_IsString(exclude_file) && access(exclude_file->valuestring, F_OK) == 0) {
         strncpy(final_exclude_path, exclude_file->valuestring, PATH_MAX);

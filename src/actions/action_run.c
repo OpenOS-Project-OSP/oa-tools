@@ -52,48 +52,48 @@ static int execute_command(const char *chroot_path, const char *command,
   }
 }
 
-int action_run(cJSON *json) {
-  cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(json, "pathLiveFs");
-  cJSON *cmd_obj = cJSON_GetObjectItemCaseSensitive(
-      json, "run_command"); // Nome più esplicito
-  cJSON *args_obj = cJSON_GetObjectItemCaseSensitive(json, "args");
 
-  if (!cJSON_IsString(pathLiveFs) || !cJSON_IsString(cmd_obj)) {
-    fprintf(stderr, "{\"error\": \"Missing pathLiveFs or run_command\"}\n");
-    return 1;
-  }
+/**
+ * 
+ */
+int action_run(OA_Context *ctx) {
+    // 1. Lookup dei parametri: Cerca nel task, se manca va nel root
+    cJSON *pathLiveFs = cJSON_GetObjectItemCaseSensitive(ctx->task, "pathLiveFs");
+    if (!pathLiveFs) pathLiveFs = cJSON_GetObjectItemCaseSensitive(ctx->root, "pathLiveFs");
 
-  // Costruiamo il percorso verso la liveroot
-  char liveroot_path[PATH_SAFE];
-  snprintf(liveroot_path, sizeof(liveroot_path), "%s/liveroot",
-           pathLiveFs->valuestring);
+    cJSON *cmd_obj = cJSON_GetObjectItemCaseSensitive(ctx->task, "run_command");
+    if (!cmd_obj) cmd_obj = cJSON_GetObjectItemCaseSensitive(ctx->root, "run_command");
 
-  // Preparazione degli argomenti (Comando + Args + NULL)
-  int args_size = cJSON_IsArray(args_obj) ? cJSON_GetArraySize(args_obj) : 0;
-  char **argv = malloc(sizeof(char *) * (args_size + 2));
+    cJSON *args_obj = cJSON_GetObjectItemCaseSensitive(ctx->task, "args");
+    if (!args_obj) args_obj = cJSON_GetObjectItemCaseSensitive(ctx->root, "args");
 
-  argv[0] = strdup(cmd_obj->valuestring);
-  for (int i = 0; i < args_size; i++) {
-    cJSON *item = cJSON_GetArrayItem(args_obj, i);
-    argv[i + 1] = strdup(cJSON_IsString(item) ? item->valuestring : "");
-  }
-  argv[args_size + 1] = NULL;
+    if (!cJSON_IsString(pathLiveFs) || !cJSON_IsString(cmd_obj)) {
+        fprintf(stderr, "{\"error\": \"Missing pathLiveFs or run_command\"}\n");
+        return 1;
+    }
 
-  printf("{\"status\": \"starting_chroot_exec\", \"command\": \"%s\"}\n",
-         cmd_obj->valuestring);
+    // Costruiamo il percorso verso la liveroot usando il valore trovato
+    char liveroot_path[PATH_SAFE];
+    snprintf(liveroot_path, sizeof(liveroot_path), "%s/liveroot", pathLiveFs->valuestring);
 
-  int exit_code = execute_command(liveroot_path, cmd_obj->valuestring, argv);
+    // Preparazione degli argomenti (Comando + Args + NULL)
+    int args_size = cJSON_IsArray(args_obj) ? cJSON_GetArraySize(args_obj) : 0;
+    char **argv = malloc(sizeof(char *) * (args_size + 2));
 
-  // Pulizia memoria
-  for (int i = 0; i <= args_size; i++)
-    free(argv[i]);
-  free(argv);
+    argv[0] = strdup(cmd_obj->valuestring);
+    for (int i = 0; i < args_size; i++) {
+        cJSON *item = cJSON_GetArrayItem(args_obj, i);
+        argv[i + 1] = strdup(cJSON_IsString(item) ? item->valuestring : "");
+    }
+    argv[args_size + 1] = NULL;
 
-  if (exit_code == 0) {
-    printf("{\"status\": \"ok\", \"exit_code\": 0}\n");
-    return 0;
-  } else {
-    fprintf(stderr, "{\"status\": \"error\", \"exit_code\": %d}\n", exit_code);
+    printf("{\"status\": \"starting_chroot_exec\", \"command\": \"%s\"}\n", cmd_obj->valuestring);
+
+    int exit_code = execute_command(liveroot_path, cmd_obj->valuestring, argv);
+
+    // Pulizia memoria
+    for (int i = 0; i <= args_size; i++) free(argv[i]);
+    free(argv);
+
     return exit_code;
-  }
 }

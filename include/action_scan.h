@@ -8,8 +8,7 @@
 #ifndef ACTION_SCAN_H
 #define ACTION_SCAN_H
 
-#include "cJSON.h"
-
-int action_scan(cJSON *json);
+#include "oa.h"
+int action_scan(OA_Context *ctx);
 
 #endif
