@@ -1,6 +1,6 @@
-# unamed-for-now - The Next Generation Remastering Suite 🐧
+# oa-tools - The Next Generation Remastering Suite 🐧
 
-Welcome to **unamed-for-now**, the successor to the `penguins-eggs` architecture. This monorepo hosts a split-responsibility system designed for high-performance Linux remastering, following the "Universal Strategy" of absolute portability.
+Welcome to **oa-tools**, the successor to the `penguins-eggs` architecture. This monorepo hosts a split-responsibility system designed for high-performance Linux remastering, following the "Universal Strategy" of absolute portability.
 
 The project is divided into two distinct entities: **oa** (The Arm) and **coa** (The Mind).
 
@@ -8,7 +8,7 @@ The project is divided into two distinct entities: **oa** (The Arm) and **coa** 
 
 ## 🏗 Project Architecture
 
-We have transitioned to a monorepo structure to ensure perfect synchronization between the engine and the orchestrator.
+We have transitioned to a monorepo structure to ensure perfect synchronization between the engine (oa) and the orchestrator (coa).
 
 ### 🦾 [oa (eggs in my dialect)](./oa) - The Arm
 **Language: C**
@@ -19,12 +19,12 @@ We have transitioned to a monorepo structure to ensure perfect synchronization b
 - Interacting directly with the Linux Kernel and system binaries.
 - **Philosophy:** Performance, stability, and zero-dependency execution.
 
-### 🧠 [coa (coa (pronounced /'kɔa/) which means 'brooding' or 'hatching' in my dialect.)](./coa) - The Mind
+### 🧠 [coa (coa means 'brooding' or 'hatching' in my dialect)](./coa) - The Mind
 
 The name derives from the dialect word coa, referring to the act of nesting or incubating the eggs until they are ready to hatch.
 
 **Language: Go**
-`coa` (Zagarolo dialect for *Cova*, the act of brooding eggs) is the high-level orchestrator:
+`coa` is the high-level orchestrator, the tools users will use:
 - **Discovery:** Automatically identifies the host distribution and family (Debian, Arch, Fedora, etc.).
 - **Strategy:** Resolves derivatives via YAML and decides which `initrd` or `bootloader` to use.
 - **Planning:** Generates dynamic "Flight Plans" (JSON) based on user intent.
@@ -52,7 +52,7 @@ This will compile both binaries:
 ---
 
 ## 📜 Philosophy
-The **artisan** project aims to provide a "Passepartout" for Linux remastering. By separating the **Mind** (Go) from the **Arm** (C), we achieve a clean, maintainable, and incredibly fast workflow that can adapt to any distribution without changing the user experience.
+The **oa-tools** project aims to provide a "Passepartout" for Linux remastering. By separating the **Mind** (Go) from the **Arm** (C), we achieve a clean, maintainable, and incredibly fast workflow that can adapt to any distribution without changing the user experience.
 
 ---
 *Created with passion by Piero Proietti.*
