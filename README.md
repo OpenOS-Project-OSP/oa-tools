@@ -1,96 +1,58 @@
-# oa 🥚🥚
+# unamed-for-now - The Next Generation Remastering Suite 🐧
 
-oa is a high-performance core engine written in C, designed for GNU/Linux system remastering. It replaces fragile and slow Bash scripting with the precision and power of native Linux kernel syscalls. Designed as a **standalone engine** to power **penguins-eggs** and other remastering tools like **MX-Snapshot** — the real ancestor of penguins-eggs (*) — oa provides a clean, JSON-based interface to manage critical system-level operations.
+Welcome to **unamed-for-now**, the successor to the `penguins-eggs` architecture. This monorepo hosts a split-responsibility system designed for high-performance Linux remastering, following the "Universal Strategy" of absolute portability.
 
-## 🚀 Key Features
+The project is divided into two distinct entities: **oa** (The Arm) and **coa** (The Mind).
 
-* **Turbo SquashFS**: High-performance compression engine with automatic multi-core detection (`-processors`) and Zstd level tuning for maximum speed.
-* **Independent ISO Builder**: A standalone "Skeleton" engine inspired by the *AdrianTM* philosophy—extracting bootloaders and kernels directly from the host system without external dependencies.
-* **Zero-Copy Filesystem Layering**: oa eliminates the need for physical data duplication by projecting the host hierarchy (`/bin`, `/etc`, `/usr`, `/var`...) via Read-Only mounts. It utilizes **OverlayFS** to provide a writable environment for remastering without touching the underlying host data. Critical kernel interfaces (`/dev`, `/proc`, `/sys`, `/run`) are safely bind-mounted with private propagation (`MS_PRIVATE`) for a secure, zero-footprint operation.
-* **Smart Exclusions**: Supports complex exclusion lists with intelligent branch skipping (`FTW_SKIP_SUBTREE`) for maximum efficiency.
-* **Zero Dependencies**: Built with a minimalist philosophy. It only requires the [cJSON](https://github.com/DaveGamble/cJSON) library (included) and standard POSIX libraries.
-* **JSON-Driven**: Every action is defined by a JSON task file, making it trivial to integrate with Node.js, Python, or C++/Qt orchestrators.
+---
 
-## 🛠 Prerequisites & Compilation
+## 🏗 Project Architecture
 
-oa expects `squashfs-tools` and `xorriso` to be available on the host system. To compile:
+We have transitioned to a monorepo structure to ensure perfect synchronization between the engine and the orchestrator.
 
+### 🦾 [oa (eggs in my dialect)](./oa) - The Arm
+**Language: C**
+`oa` is the low-level engine. It handles the "heavy lifting" of the system:
+- Managing OverlayFS and mount points.
+- Executing SquashFS compression.
+- Building the ISO structures (ISOLINUX/UEFI).
+- Interacting directly with the Linux Kernel and system binaries.
+- **Philosophy:** Performance, stability, and zero-dependency execution.
+
+### 🧠 [coa (coa (pronounced /'kɔa/) which means 'brooding' or 'hatching' in my dialect.)](./coa) - The Mind
+
+The name derives from the dialect word coa, referring to the act of nesting or incubating the eggs until they are ready to hatch.
+
+**Language: Go**
+`coa` (Zagarolo dialect for *Cova*, the act of brooding eggs) is the high-level orchestrator:
+- **Discovery:** Automatically identifies the host distribution and family (Debian, Arch, Fedora, etc.).
+- **Strategy:** Resolves derivatives via YAML and decides which `initrd` or `bootloader` to use.
+- **Planning:** Generates dynamic "Flight Plans" (JSON) based on user intent.
+- **Interface:** Manages the CLI experience, sub-commands (`produce`, `kill`, `status`), and future TUI helpers.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- A Linux system (Debian-based, Arch, or Fedora).
+- `gcc` and `make` (for `oa`).
+- `golang` 1.21+ (for `coa`).
+
+### Build Everything
+From this root directory, simply run:
 ```bash
 make
 ```
 
-## 📂 Plan Execution
-
-oa can execute complex workflows through a `plan.json`. This allows for a full remastering cycle in one shot:
-
-```json
-{
-  "pathLiveFs": "/home/eggs",
-  "mode": "",
-  "initrd_cmd": "mkinitramfs -o {{out}} {{ver}}",
-  "plan": [
-    {
-      "command": "action_prepare"
-    },
-    {
-      "command": "action_initrd"
-    },
-    {
-      "command": "action_livestruct"
-    },
-    {
-      "command": "action_isolinux"
-    },
-    {
-      "command": "action_uefi"
-    },
-    {
-      "command": "action_squash"
-    },
-    {
-      "command": "action_iso",
-      "volid": "EGGS_CUSTOM_2026",
-      "output_iso": "egg-of_debian-trixie-oa_amd64.iso"
-    },
-    {
-      "command": "action_cleanup"
-    }
-  ]
-}
-```
-
-**Execution:**
-
-```bash
-sudo ./oa plan.json
-```
-
-## 🧠 Philosophy & Universal Strategy
-
-**oa** is not just a copy tool; it is the raw execution engine for a broader ecosystem (*penguins-eggs* and hopefully others). It achieves true distro-agnosticism (supporting Debian, Arch, RHEL, SUSE, Manjaro, etc.) by intentionally leaving the "thinking" to a higher-level orchestrator and relying on core architectural pillars like:
-1. **The "Debian Passepartout" Bootloader**
-2. **Yocto-Style Native Identity Forging**
-3. **The Initramfs Abstraction**
-4. **The "Eggs vs Bananas" Biological Diversity Paradigm**
-
-To fully understand the architecture and the strategy behind this engine, please read the [Universal Remastering Strategy](docs/UNIVERSAL_STRATEGY.md) and the [Architecture Guide](docs/ARCHITECTURE.md).
-
-## 🗺 Roadmap
-
-The development goals and future milestones have been moved to a dedicated document. 
-Please refer to the [ROADMAP](docs/ROADMAP.md) for details on upcoming features and tracking.
+This will compile both binaries:
+- `./oa/oa` (The Engine)
+- `./coa/coa` (The Orchestrator)
 
 ---
-*Developed with the efficiency of C and the reliability of a Clipper '87 veteran.*
 
-# The name and other stuff
+## 📜 Philosophy
+The **artisan** project aims to provide a "Passepartout" for Linux remastering. By separating the **Mind** (Go) from the **Arm** (C), we achieve a clean, maintainable, and incredibly fast workflow that can adapt to any distribution without changing the user experience.
 
-The name `oa` is a tribute to the linguistic roots of Zagarolo, my native town. Following the Sack of Rome in 1527, the local population was decimated. To repopulate the area, families were brought in from the North-East. This created a unique linguistic pocket: while Rome's dialect evolved toward a Tuscan style, Zagarolo preserved an "Umbrian-style" dialect. Even today, the kinship with the Terni dialect is striking—sharing the same sounds, cadences, and archaic forms. 
-
-`oa` is the local word for eggs. It represents the project's evolution: moving from the broad concept of penguins-eggs to a core engine that is as essential, native, and "raw" as its name. 
-
-When I started penguins-eggs, I explored the landscape of the time, studying Systemback and Remastersys, before finally discovering refracta-snapshot, which I used as my starting point. For years, I believed mx-snapshot was a sort of "cousin" based on Refracta. However, about 10 years later, I discovered a deeper truth directly from Adrian himself: mx-snapshot was the true ancestor. I had believed it was based on refracta-snapshot, but it was actually the other way around. 
-
-Most importantly, I later re-adopted the core concept that had been set aside in Refracta: the avoidance of copying the live running filesystem. I achieved this by implementing it through a different, modern path: OverlayFS. 
-
-For those interested in the philosophy behind the project, I recommend this [article](https://penguins-eggs.net/blog/eggs-bananas) on my blog.
+---
+*Created with passion by Piero Proietti.*

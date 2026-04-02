@@ -1,32 +1,32 @@
-	CC = gcc
-# Usiamo += per aggiungere opzioni senza cancellare quelle precedenti
-CFLAGS = -Wall -Wextra -Iinclude -D_GNU_SOURCE -Wno-format-truncation
-LDFLAGS = -lm
+# artisan/Makefile
 
-# 1. Trova tutti i file .c ricorsivamente
-SOURCES = $(shell find src -name '*.c')
+# Directories
+OA_DIR = oa
+COA_DIR = coa
 
-# 2. Genera i nomi degli oggetti
-OBJECTS = $(SOURCES:src/%.c=obj/%.o)
+# Binaries
+OA_BIN = $(OA_DIR)/oa
+COA_BIN = $(COA_DIR)/coa
 
-TARGET = oa
-
-all: $(TARGET)
-
-$(TARGET): $(OBJECTS)
-	@echo "  LD    $@"
-	@$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
+all: build_oa build_coa
 	@echo "--------------------------------------"
-	@echo "Build completata con successo: ./$(TARGET)"
+	@echo "Schiusa completata con successo! 🐣"
+	@echo "Braccio (C):  ./$(OA_BIN)"
+	@echo "Mente (Go):   ./$(COA_BIN)"
+	@echo "--------------------------------------"
 
-# Creazione cartelle e compilazione
-obj/%.o: src/%.c
-	@mkdir -p $(dir $@)
-	@echo "  CC    $<"
-	@$(CC) $(CFLAGS) -c $< -o $@
+build_oa:
+	@echo "  MAKING oa..."
+	@$(MAKE) -C $(OA_DIR)
+
+build_coa:
+	@echo "  MAKING coa..."
+	@cd $(COA_DIR) && go build -o coa ./src/*.go
 
 clean:
-	@echo "  Cleaning up..."
-	@rm -rf obj $(TARGET)
+	@echo "  Pulizia in corso..."
+	@$(MAKE) -C $(OA_DIR) clean
+	@rm -f $(COA_BIN)
+	@rm -f $(COA_DIR)/plan_coa_tmp.json
 
-.PHONY: all clean
+.PHONY: all build_oa build_coa clean

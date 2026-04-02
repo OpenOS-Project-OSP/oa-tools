@@ -112,6 +112,5 @@ int action_users(OA_Context *ctx) {
         fclose(fs);
     }
 
-    printf("{\"status\": \"ok\", \"action\": \"users_complete\"}\n");
     return 0;
 }

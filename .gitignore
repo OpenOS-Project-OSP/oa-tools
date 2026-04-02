@@ -1,21 +1,22 @@
-# --- Binari e Oggetti ---
-oa
+# artisan/.gitignore
+
+# Binaries
+oa/oa
+coa/coa
+
+# Build objects
+oa/obj/
 *.o
 
-# --- Directory di lavoro (Staging) ---
-
-# --- File Temporanei ---
-*.tmp
+# Logs
 *.log
-/tmp/vitellus_*
+oa/oa.log
+coa/oa.log
 
-# --- Editor e OS ---
-.vscode/
-.idea/
-*.swp
-*.swo
+# Temporary files (The "nest" leftovers)
+plan_coa_tmp.json
+coa/plan_coa_tmp.json
+
+# OS generated files
 .DS_Store
-
-# --- Piani di test ---
-# Se vuoi tenere i tuoi plan.json privati o se sono solo per test locali
-# test_*.json
+Thumbs.db

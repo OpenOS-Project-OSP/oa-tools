@@ -26,7 +26,7 @@ int action_livestruct(OA_Context *ctx) {
     if (uname(&buffer) != 0) return 1;
     char *kversion = buffer.release;
 
-    printf("\033[1;34m[oa REMASTER]\033[0m Extracting kernel %s to live directory...\n", kversion);
+    printf("\033[1;34m[oa LIVESTRUC]\033[0m Extracting kernel %s to live directory...\n", kversion);
 
     // 3. Copia Kernel
     snprintf(cmd, sizeof(cmd), "cp /boot/vmlinuz-%s %s/vmlinuz", kversion, live_dir);

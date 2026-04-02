@@ -68,7 +68,7 @@ int action_run(OA_Context *ctx) {
     if (!args_obj) args_obj = cJSON_GetObjectItemCaseSensitive(ctx->root, "args");
 
     if (!cJSON_IsString(pathLiveFs) || !cJSON_IsString(cmd_obj)) {
-        fprintf(stderr, "{\"error\": \"Missing pathLiveFs or run_command\"}\n");
+        fprintf(stderr, "Error: Missing pathLiveFs or run_command\n");
         return 1;
     }
 
@@ -86,8 +86,6 @@ int action_run(OA_Context *ctx) {
         argv[i + 1] = strdup(cJSON_IsString(item) ? item->valuestring : "");
     }
     argv[args_size + 1] = NULL;
-
-    printf("{\"status\": \"starting_chroot_exec\", \"command\": \"%s\"}\n", cmd_obj->valuestring);
 
     int exit_code = execute_command(liveroot_path, cmd_obj->valuestring, argv);
 

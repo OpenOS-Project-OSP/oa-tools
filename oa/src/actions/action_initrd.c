@@ -50,7 +50,7 @@ int action_initrd(OA_Context *ctx) {
     if (!initrd_cmd_tpl) initrd_cmd_tpl = cJSON_GetObjectItemCaseSensitive(ctx->root, "initrd_cmd");
 
     if (!cJSON_IsString(pathLiveFs) || !cJSON_IsString(initrd_cmd_tpl)) {
-        fprintf(stderr, "{\"error\": \"initrd_cmd or pathLiveFs missing\"}\n");
+        fprintf(stderr, "Error: initrd_cmd or pathLiveFs missing\n");
         return 1;
     }
 
@@ -74,7 +74,7 @@ int action_initrd(OA_Context *ctx) {
     system(mkdir_cmd);
 
     if (system(final_cmd) != 0) {
-        fprintf(stderr, "{\"status\": \"error\", \"msg\": \"initrd generation failed\"}\n");
+        fprintf(stderr, "Error: initrd generation failed\n");
         return 1;
     }
 

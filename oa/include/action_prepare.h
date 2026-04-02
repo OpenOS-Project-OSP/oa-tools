@@ -10,6 +10,5 @@
 
 #include "oa.h"
 int action_prepare(OA_Context *ctx);
-int action_cleanup(OA_Context *ctx);
 
 #endif
