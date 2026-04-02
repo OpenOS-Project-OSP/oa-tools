@@ -72,7 +72,7 @@ int action_squash(OA_Context *ctx) {
         snprintf(cmd + strlen(cmd), 8192 - strlen(cmd), " -e%s", session_excludes);
     }
 
-    printf("\n\033[1;34m[oa Turbo Squash]\033[0m Cores: %ld | Lvl: %d | Mode: %s\n", nprocs, level, mode);
+    printf("\n\033[1;34m[oa SQUASH]\033[0m Cores: %ld | Lvl: %d | Mode: %s\n", nprocs, level, mode);
     return system(cmd);
 }
 

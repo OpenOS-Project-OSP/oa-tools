@@ -53,8 +53,6 @@ int action_prepare(OA_Context *ctx) {
     snprintf(liveroot_path, sizeof(liveroot_path), "%s/liveroot", base);
     snprintf(overlay_path, sizeof(overlay_path), "%s/.overlay", base);
 
-    printf("{\"status\": \"starting\", \"action\": \"prepare_mirror\", \"path\": \"%s\", \"mode\": \"%s\"}\n", base, mode);
-
     // 1. Setup Struttura Base 
     mkdir(base, 0755);
     make_full_dir(base, "liveroot");

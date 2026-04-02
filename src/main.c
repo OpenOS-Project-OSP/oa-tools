@@ -58,7 +58,7 @@ int execute_verb(cJSON *root, cJSON *task) {
     else if (strcmp(cmd_name, "action_users") == 0)    status = action_users(&ctx);
     else {
         LOG_ERR("Unknown command requested: %s", cmd_name);
-        fprintf(stderr, "{\"error\": \"Unknown command '%s'\"}\n", cmd_name);
+        fprintf(stderr, "Error: Unknown command '%s'\n", cmd_name);
         return 1;
     }
 
@@ -73,7 +73,7 @@ int execute_verb(cJSON *root, cJSON *task) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        printf("oa engine v0.2\nUsage: %s <plan.json>\n", argv[0]);
+        printf("oa engine v%s\nUsage: %s <plan.json>\n",OA_VERSION, argv[0]);
         return 1;
     }
 
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
             LOG_INFO("--- Task %d ---", step);
             if (execute_verb(json, task) != 0) {
                 LOG_ERR("Plan halted at step %d due to previous error", step);
-                fprintf(stderr, "{\"status\": \"halted\", \"error\": \"Plan failed\"}\n");
+                fprintf(stderr, "Error: Plan halted at step %d\n", step);
                 final_status = 1;
                 break;
             }

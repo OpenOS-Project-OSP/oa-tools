@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2026-04-02
+## [v0.5.0] - 2026-04-02
 
 ### 🚀 Added
 - **Smart Surgical Unmount**: `action_cleanup` now dynamically reads `/proc/mounts` to perform an inside-out unmount (`MNT_DETACH`). It specifically targets only `liveroot` and `.overlay` branches, eliminating "zombie mounts" safely without affecting user network shares or external drives.

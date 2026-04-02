@@ -21,7 +21,7 @@ int action_iso(OA_Context *ctx) {
     if (!bootloaders_path) bootloaders_path = cJSON_GetObjectItemCaseSensitive(ctx->root, "bootloaders_path");
 
     if (!cJSON_IsString(pathLiveFs)) {
-        fprintf(stderr, "{\"error\": \"pathLiveFs mancante nel contesto ISO\"}\n");
+        fprintf(stderr, "Error: pathLiveFs missing in ISO context\n");
         return 1;
     }
 
@@ -32,7 +32,7 @@ int action_iso(OA_Context *ctx) {
     const char *iso_target = cJSON_IsString(output_iso) ? output_iso->valuestring : "live-system.iso";
     if (iso_target[0] == '/') {
         strncpy(output_iso_path, iso_target, PATH_SAFE);
-        printf("\033[1;34m[oa ISO Mode]\033[0m Absolute output path detected. Writing directly to: %s\n", output_iso_path);
+        printf("\033[1;34m[oa ISO]\033[0m Absolute output path detected. Writing directly to: %s\n", output_iso_path);
     } else {
         snprintf(output_iso_path, sizeof(output_iso_path), "%s/%s", pathLiveFs->valuestring, iso_target);
     }
@@ -52,7 +52,7 @@ int action_iso(OA_Context *ctx) {
 
     // 3. Creazione dinamica di efi.img se è stato preparato l'ambiente UEFI
     if (access(efi_check, F_OK) == 0) {
-        printf("\033[1;34m[oa ISO Mode]\033[0m Generating FAT efi.img for UEFI hybrid boot...\n");
+        printf("\033[1;34m[oa ISO]\033[0m Generating FAT efi.img for UEFI hybrid boot...\n");
         char efi_img_path[PATH_SAFE];
         snprintf(efi_img_path, PATH_SAFE, "%s/boot/grub/efi.img", iso_root);
 
@@ -90,7 +90,7 @@ int action_iso(OA_Context *ctx) {
              output_iso_path, 
              iso_root);
 
-    printf("\n\033[1;32m[oa ISO Mode]\033[0m Finalizing Hybrid ISO: %s\n", output_iso_path);
+    printf("\n\033[1;32m[oa ISO]\033[0m Finalizing Hybrid ISO: %s\n", output_iso_path);
            
     return system(cmd);
 }

@@ -23,6 +23,8 @@
 #include <sys/mount.h>   // <--- FONDAMENTALE PER I MOUNT (MS_BIND, etc.)
 #include <ftw.h>
 
+#define OA_VERSION "0.5.0"
+
 // --- Librerie esterne ---
 #include "cJSON.h"
 #include "logger.h"
