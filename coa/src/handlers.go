@@ -9,8 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strings"
-	"time"
 )
 
 // getOaPath cerca il braccio operativo (oa) nel sistema o nel percorso relativo
@@ -170,15 +168,16 @@ func handleAdapt() {
 	fmt.Println("\033[1;32m[coa]\033[0m Resolution adapted.")
 }
 
-// handleExport copia in remoto la ISO
+// handleExport copia in remoto la ISO utilizzando SSH/SCP (no sudo locale) con Multiplexing
 func handleExport(clean bool) {
-	remoteHost := "root@192.168.1.2"
+	remoteUserHost := "root@192.168.1.2"
 	remotePath := "/var/lib/vz/template/iso/"
 	srcDir := "/home/eggs"
 
+	// --- 1. SELEZIONE LOCALE: Identifichiamo l'uovo più fresco ---
 	allFiles, _ := filepath.Glob(filepath.Join(srcDir, "egg-of_*.iso"))
 	if len(allFiles) == 0 {
-		fmt.Println("\033[1;31m[coa]\033[0m Nest is empty.")
+		fmt.Println("\033[1;31m[coa]\033[0m Nest is empty. No ISOs found in", srcDir)
 		return
 	}
 
@@ -201,44 +200,58 @@ func handleExport(clean bool) {
 		}
 	}
 
-	localMount := "/tmp/coa-export-point"
-	exec.Command("sudo", "fusermount", "-uz", localMount).Run()
-	exec.Command("sudo", "rm", "-rf", localMount).Run()
-	os.MkdirAll(localMount, 0755)
-
-	fmt.Printf("\033[1;34m[coa]\033[0m Mounting Proxmox storage (root)...\n")
-	mountCmd := exec.Command("sshfs", remoteHost+":"+remotePath, localMount, "-o", "cache=no,allow_other")
-	if out, err := mountCmd.CombinedOutput(); err != nil {
-		fmt.Printf("\033[1;31m[coa]\033[0m Mount failed: %v\n%s\n", err, out)
-		return
+	// --- 2. CONFIGURAZIONE SSH MULTIPLEXING ---
+	// Questi parametri dicono a SSH/SCP di riutilizzare la stessa connessione
+	socketPath := "/tmp/coa-ssh-mux"
+	muxArgs := []string{
+		"-o", "ControlMaster=auto",
+		"-o", "ControlPath=" + socketPath,
+		"-o", "ControlPersist=2m", // Mantiene il tunnel aperto per 2 minuti
 	}
 
+	// Defer per smontare elegantemente il tunnel master quando la funzione termina
 	defer func() {
-		fmt.Printf("\033[1;34m[coa]\033[0m Finalizing: syncing and unmounting...\n")
-		exec.Command("sync").Run()
-		time.Sleep(1 * time.Second)
-		exec.Command("sudo", "fusermount", "-uz", localMount).Run()
-		exec.Command("sudo", "rm", "-rf", localMount).Run()
+		exec.Command("ssh", "-O", "exit", "-o", "ControlPath="+socketPath, remoteUserHost).Run()
+		os.Remove(socketPath)
 	}()
 
+	// --- 3. PULIZIA REMOTA E TRASFERIMENTO ---
 	for prefix, localPath := range latestFiles {
 		targetFileName := filepath.Base(localPath)
-		fmt.Printf("\033[1;35m[PROCESS]\033[0m Family: %s\n", prefix)
+		fmt.Printf("\n\033[1;35m[PROCESS]\033[0m Family: %s\n", prefix)
 
+		// CANCELLAZIONE
 		if clean {
-			remoteEntries, _ := os.ReadDir(localMount)
-			for _, entry := range remoteEntries {
-				if strings.HasPrefix(entry.Name(), prefix) && entry.Name() != targetFileName {
-					fmt.Printf("\033[1;31m[DELETE]\033[0m Removing old version: %s\n", entry.Name())
-					os.Remove(filepath.Join(localMount, entry.Name()))
-				}
+			fmt.Printf("\033[1;34m[CLEAN]\033[0m Removing old versions on Proxmox...\n")
+
+			rmCmdStr := fmt.Sprintf("rm -f %s%s*", remotePath, prefix)
+			// Uniamo gli argomenti di multiplexing con quelli standard
+			sshArgs := append(muxArgs, remoteUserHost, rmCmdStr)
+			sshCmd := exec.Command("ssh", sshArgs...)
+
+			sshCmd.Stdout = os.Stdout
+			sshCmd.Stderr = os.Stderr
+			sshCmd.Stdin = os.Stdin // FONDAMENTALE: permette a SSH di leggere la password dal terminale
+
+			if err := sshCmd.Run(); err != nil {
+				fmt.Printf("\033[1;33m[WARNING]\033[0m Remote cleanup failed or no old files found.\n")
+			} else {
+				fmt.Printf("\033[1;32m[CLEAN]\033[0m Old versions removed.\n")
 			}
 		}
 
-		dstPath := filepath.Join(localMount, targetFileName)
+		// COPIA
 		fmt.Printf("\033[1;32m[COPY]\033[0m Sending %s to Proxmox...\n", targetFileName)
 
-		if err := copyFile(localPath, dstPath); err != nil {
+		dstStr := fmt.Sprintf("%s:%s", remoteUserHost, remotePath)
+		scpArgs := append(muxArgs, localPath, dstStr)
+		scpCmd := exec.Command("scp", scpArgs...)
+
+		scpCmd.Stdout = os.Stdout
+		scpCmd.Stderr = os.Stderr
+		scpCmd.Stdin = os.Stdin // Stesso discorso, serve il flusso interattivo
+
+		if err := scpCmd.Run(); err != nil {
 			fmt.Printf("\033[1;31m[ERROR]\033[0m Copy failed: %v\n", err)
 		} else {
 			fmt.Printf("\033[1;32m[SUCCESS]\033[0m %s is now on Proxmox.\n", targetFileName)
