@@ -107,7 +107,7 @@ func handleProduce(mode string, workPath string, d *Distro) {
 	prePlan := FlightPlan{
 		PathLiveFs: workPath,
 		Mode:       mode,
-		Plan:       []Action{{Command: "action_prepare"}},
+		Plan:       []Action{{Command: "lay_prepare"}},
 	}
 	executePlan(prePlan)
 

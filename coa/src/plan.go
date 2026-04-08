@@ -92,42 +92,40 @@ func GeneratePlan(d *Distro, mode string, workPath string) FlightPlan {
 		plan.Users = []UserConfig{}
 	}
 
-	// 3. Assemblaggio dinamico della catena di montaggio [cite: 146, 290]
-	// NOTA: action_prepare viene omesso qui perché eseguito preventivamente
-	// in handleProduce per permettere il bridging dei file [cite: 200, 248]
+	// 3. Assemblaggio dinamico della catena di montaggio
+	// NOTA: lay_prepare viene omesso qui perché eseguito preventivamente
+	// in handleProduce per permettere il bridging dei file
 	plan.Plan = []Action{
-		{Command: "action_users"}, // Identità nativa Yocto-style [cite: 237, 302]
+		{Command: "lay_users"}, // Identità nativa Yocto-style
 	}
 
 	// --- Task di "Vestizione" (Patching configurazioni) ---
-	// Per Arch Linux la vestizione è gestita esternamente via bridge fisso in /etc.
-	// Per Fedora manteniamo l'iniezione standard in dracut.conf.d [cite: 314, 337]
 	if d.FamilyID == "fedora" {
 		plan.Plan = append(plan.Plan, Action{
-			Command:    "action_run", // Esegue il comando dentro il chroot [cite: 210, 213]
+			Command:    "sys_run", // <-- AGGIORNATO (ex action_run)
 			RunCommand: "cp",
 			Args:       []string{"/tmp/coa/configs/dracut/fedora.conf", "/etc/dracut.conf.d/coa.conf"},
 		})
 	}
 
-	// Proseguiamo con il resto del piano standard [cite: 146]
+	// Proseguiamo con il resto del piano standard
 	plan.Plan = append(plan.Plan,
-		Action{Command: "action_initrd"},     // Generazione ramdisk [cite: 180, 307]
-		Action{Command: "action_livestruct"}, // Kernel extraction [cite: 196, 578]
-		Action{Command: "action_isolinux"},   // BIOS bootloader [cite: 192, 565]
-		Action{Command: "action_uefi"},       // UEFI bootloader [cite: 234, 305]
-		Action{Command: "action_squash"},     // Compressione Turbo SquashFS [cite: 137, 220]
+		Action{Command: "lay_initrd"},     // Generazione ramdisk
+		Action{Command: "lay_livestruct"}, // Kernel extraction
+		Action{Command: "lay_isolinux"},   // BIOS bootloader
+		Action{Command: "lay_uefi"},       // UEFI bootloader
+		Action{Command: "lay_squash"},     // Compressione Turbo SquashFS
 	)
 
-	// Inserzione modulare per cifratura [cite: 173, 505]
+	// Inserzione modulare per cifratura
 	if mode == "crypted" {
 		plan.Plan = append(plan.Plan, Action{
-			Command:         "action_crypted",
+			Command:         "lay_crypted",
 			CryptedPassword: "evolution",
 		})
 	}
 
-	// definizione di isoname
+	// --- definizione di isoname ---
 
 	// 1. Recuperiamo l'hostname (es. colibri)
 	hostname, _ := os.Hostname()
@@ -145,7 +143,7 @@ func GeneratePlan(d *Distro, mode string, workPath string) FlightPlan {
 	var nameParts []string
 	nameParts = append(nameParts, d.DistroID)
 
-	// Priorità: Codename > Release [cite: 316, 342]
+	// Priorità: Codename > Release
 	if d.CodenameID != "" {
 		nameParts = append(nameParts, d.CodenameID)
 	} else if d.ReleaseID != "" {
@@ -164,14 +162,14 @@ func GeneratePlan(d *Distro, mode string, workPath string) FlightPlan {
 	// Formato: egg-of_distro-info-host_timestamp_arch.iso
 	isoName := fmt.Sprintf("egg-of_%s_%s_%s.iso", distroTag, arch, timestamp)
 
-	// --- Inserimento dell'azione nel piano per il motore oa --- [cite: 32, 146]
+	// --- Inserimento dell'azione nel piano per il motore oa ---
 	plan.Plan = append(plan.Plan, Action{
-		Command:   "action_iso",
+		Command:   "lay_iso", 
 		VolID:     "OA_LIVE",
 		OutputISO: isoName,
 	})
 
-	plan.Plan = append(plan.Plan, Action{Command: "action_cleanup"}) // [cite: 68, 172]
+	plan.Plan = append(plan.Plan, Action{Command: "lay_cleanup"})
 
 	return plan
 }

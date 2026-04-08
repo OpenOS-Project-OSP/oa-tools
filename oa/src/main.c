@@ -32,33 +32,36 @@ int execute_verb(cJSON *root, cJSON *task) {
     }
 
     const char *cmd_name = command->valuestring;
-
-    // CREAZIONE DEL CONTESTO (Puntatori a Global + Local)
     OA_Context ctx = { .root = root, .task = task };
 
-    // Logging dell'azione imminente
     LOG_INFO(">>> dispatching to: %s", cmd_name);
     printf("\033[1;34m[oa]\033[0m Executing action '%s'...\n", cmd_name);
-
     int status = 1; // Default a errore
 
-    // Mappatura comandi
-    if (strcmp(cmd_name, "action_prepare") == 0)       status = action_prepare(&ctx);
-    else if (strcmp(cmd_name, "action_cleanup") == 0)  status = action_cleanup(&ctx);
-    else if (strcmp(cmd_name, "action_crypted") == 0)  status = action_crypted(&ctx);
-    else if (strcmp(cmd_name, "action_initrd") == 0)   status = action_initrd(&ctx);
-    else if (strcmp(cmd_name, "action_iso") == 0)      status = action_iso(&ctx);
-    else if (strcmp(cmd_name, "action_isolinux") == 0) status = action_isolinux(&ctx);
-    else if (strcmp(cmd_name, "action_livestruct") == 0) status = action_livestruct(&ctx);
-    else if (strcmp(cmd_name, "action_suspend") == 0)    status = action_suspend(&ctx);
-    else if (strcmp(cmd_name, "action_run") == 0)      status = action_run(&ctx);
-    else if (strcmp(cmd_name, "action_scan") == 0)     status = action_scan(&ctx);
-    else if (strcmp(cmd_name, "action_squash") == 0)   status = action_squash(&ctx);
-    else if (strcmp(cmd_name, "action_uefi") == 0)     status = action_uefi(&ctx); 
-    else if (strcmp(cmd_name, "action_users") == 0)    status = action_users(&ctx);
-    else if (strcmp(cmd_name, "action_partition") == 0) status = action_partition(&ctx);
-    else if (strcmp(cmd_name, "action_format_ext4") == 0) status = action_format_ext4(&ctx);
-    else if (strcmp(cmd_name, "action_unpack") == 0)   status = action_unpack(&ctx);
+    // --- FASE 1: LAY (Creazione Uovo / Remastering) ---
+    if (strcmp(cmd_name, "lay_prepare") == 0)          status = lay_prepare(&ctx);
+    else if (strcmp(cmd_name, "lay_cleanup") == 0)     status = lay_cleanup(&ctx);
+    else if (strcmp(cmd_name, "lay_crypted") == 0)     status = lay_crypted(&ctx);
+    else if (strcmp(cmd_name, "lay_initrd") == 0)      status = lay_initrd(&ctx);
+    else if (strcmp(cmd_name, "lay_iso") == 0)         status = lay_iso(&ctx);
+    else if (strcmp(cmd_name, "lay_isolinux") == 0)    status = lay_isolinux(&ctx);
+    else if (strcmp(cmd_name, "lay_livestruct") == 0)  status = lay_livestruct(&ctx);
+    else if (strcmp(cmd_name, "lay_squash") == 0)      status = lay_squash(&ctx);
+    else if (strcmp(cmd_name, "lay_uefi") == 0)        status = lay_uefi(&ctx);
+    else if (strcmp(cmd_name, "lay_users") == 0)       status = lay_users(&ctx);
+
+    // --- FASE 2: HATCH (Schiusa / Installazione Fisica) ---
+    else if (strcmp(cmd_name, "hatch_partition") == 0) status = hatch_partition(&ctx);
+    else if (strcmp(cmd_name, "hatch_format") == 0)    status = hatch_format(&ctx);
+    else if (strcmp(cmd_name, "hatch_unpack") == 0)    status = hatch_unpack(&ctx);
+    // TODO: Aggiungeremo hatch_fstab, hatch_users, hatch_uefi qui appena li creiamo
+
+    // --- FASE 3: SYS (Utility Generiche) ---
+    else if (strcmp(cmd_name, "sys_run") == 0)         status = sys_run(&ctx);
+    else if (strcmp(cmd_name, "sys_scan") == 0)        status = sys_scan(&ctx);
+    else if (strcmp(cmd_name, "sys_suspend") == 0)     status = sys_suspend(&ctx);
+    
+    // --- ERRORE ---
     else {
         LOG_ERR("Unknown command requested: %s", cmd_name);
         fprintf(stderr, "Error: Unknown command '%s'\n", cmd_name);

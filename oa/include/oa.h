@@ -44,26 +44,31 @@ typedef struct {
     cJSON *task;    // Il comando specifico nel plan (configurazione locale) 
 } OA_Context;
 
-// --- Inclusioni dei Moduli Actions ---
-// Devono stare QUI in fondo, per evitare inclusioni circolari,
-// in modo che OA_Context sia già definito quando vengono letti.
-#include "action_prepare.h"  // Contiene anche action_cleanup
-#include "action_cleanup.h"
-#include "action_crypted.h"
-#include "action_initrd.h"
-#include "action_iso.h"
-#include "action_isolinux.h"
-#include "action_livestruct.h"
-#include "action_run.h"
-#include "action_scan.h"
-#include "action_squash.h"
-#include "action_suspend.h"
-#include "action_uefi.h"
-#include "action_users.h"
+// --- Inclusioni dei Moduli ---
 
-// Nuovi moduli di installazione (Krill)
-#include "action_partition.h"
-#include "action_format_ext4.h"
-#include "action_users.h"
+// LAY (Remastering)
+#include "lay_cleanup.h"
+#include "lay_crypted.h"
+#include "lay_initrd.h"
+#include "lay_iso.h"
+#include "lay_isolinux.h"
+#include "lay_livestruct.h"
+#include "lay_prepare.h"
+#include "lay_squash.h"
+#include "lay_uefi.h"
+#include "lay_users.h"
+
+// HATCH (Installazione Fisica)
+#include "hatch_format.h"
+#include "hatch_partition.h"
+#include "hatch_unpack.h"
+#include "hatch_fstab.h"
+#include "hatch_users.h"
+// #include "hatch_uefi.h"  <-- Questo decommentalo appena lo creiamo
+
+// SYS (Utility Generiche)
+#include "sys_run.h"
+#include "sys_scan.h"
+#include "sys_suspend.h"
 
 #endif
