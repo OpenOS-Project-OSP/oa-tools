@@ -23,7 +23,7 @@ int hatch_users(OA_Context *ctx) {
 
     // 2. Puntiamo DIRETTAMENTE alla radice montata sul disco fisico (es. /mnt/krill-target)
     char target_root[PATH_SAFE], p_path[PATH_SAFE], s_path[PATH_SAFE], g_path[PATH_SAFE];
-    snprintf(target_root, sizeof(target_root), "%s", pathLiveFs->valuestring);
+    snprintf(target_root, sizeof(target_root), "%s/liveroot", pathLiveFs->valuestring);
     snprintf(p_path, sizeof(p_path), "%s/etc/passwd", target_root);
     snprintf(s_path, sizeof(s_path), "%s/etc/shadow", target_root);
     snprintf(g_path, sizeof(g_path), "%s/etc/group", target_root);
