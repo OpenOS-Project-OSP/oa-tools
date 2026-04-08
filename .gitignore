@@ -1,22 +1,35 @@
 # artisan/.gitignore
 
-# Binaries
+# --- Binaries ---
 oa/oa
 coa/coa
 
-# Build objects
+# --- Build objects ---
 oa/obj/
 *.o
 
-# Logs
+# --- Packages & Build Artifacts ---
+*.deb
+*.rpm
+*.pkg.tar.zst
+PKGBUILD
+src/*.tar.gz
+
+# --- Auto-generated Documentation (coa docs) ---
+coa/docs/man/
+coa/docs/wiki/
+coa/docs/completion/
+
+# --- Logs ---
 *.log
 oa/oa.log
 coa/oa.log
 
-# Temporary files (The "nest" leftovers)
+# --- Temporary files (The "nest" leftovers) ---
 plan_coa_tmp.json
 coa/plan_coa_tmp.json
+*.tmp
 
-# OS generated files
+# --- OS generated files ---
 .DS_Store
 Thumbs.db
