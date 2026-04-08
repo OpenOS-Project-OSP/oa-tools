@@ -91,7 +91,7 @@ func main() {
 		Use:   "version",
 		Short: "Print the version number of coa",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("coa v0.1.0 - The Mind of remaster\n")
+			fmt.Printf("coa v0.5.1 - The Mind of remaster\n")
 		},
 	}
 

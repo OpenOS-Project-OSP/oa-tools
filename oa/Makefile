@@ -1,8 +1,12 @@
 # artisan/oa/Makefile
 
+# Fallback se non viene passata dal Makefile principale o da coa
+VERSION ?= 0.0.0-dev
+
 CC = gcc
-# -D_GNU_SOURCE per le estensioni GNU (come asprintf o mount)
-CFLAGS = -Wall -Wextra -Iinclude -D_GNU_SOURCE -Wno-format-truncation
+# Aggiunto -DOA_VERSION con il valore della variabile VERSION
+# Notare i backslash per passare le virgolette alla stringa C
+CFLAGS = -Wall -Wextra -Iinclude -D_GNU_SOURCE -Wno-format-truncation -DOA_VERSION=\"$(VERSION)\"
 LDFLAGS = -lm
 
 # Struttura delle cartelle
@@ -16,25 +20,24 @@ SOURCES = $(shell find $(SRC_DIR) -name '*.c')
 # Mappa i sorgenti agli oggetti (es: src/utils/logger.c -> obj/utils/logger.o)
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
-# Nome del binario finale (rimane dentro la cartella oa/)
+# Nome del binario finale
 TARGET = oa
 
 # Target principale
 all: $(TARGET)
 
-# Linker: unisce tutti gli oggetti nel binario finale
+# Linker
 $(TARGET): $(OBJECTS)
 	@echo "  LD    $@"
 	@$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
-# Compilatore: trasforma ogni .c in un .o
-# Crea le sottocartelle in obj/ se non esistono (es: obj/actions/)
+# Compilatore
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	@echo "  CC    $<"
 	@$(CC) $(CFLAGS) -c $< -o $@
 
-# Pulizia chirurgica: rimuove solo gli oggetti e il binario di oa
+# Pulizia
 clean:
 	@echo "  Cleaning oa..."
 	@rm -rf $(OBJ_DIR) $(TARGET)

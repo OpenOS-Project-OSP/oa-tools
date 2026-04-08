@@ -1,4 +1,6 @@
 # artisan/Makefile
+# Fallback se non viene passata da coa
+VERSION ?= 0.0.0-dev
 
 # Directories
 OA_DIR = oa
@@ -13,18 +15,15 @@ all: build_oa build_coa
 	@echo "Hatching completed successfully! 🐣"
 	@echo "coa Brain (Go):   ./$(COA_BIN)"
 	@echo "oa Workhorse (C): ./$(OA_BIN)"
-	@echo "Can be usefull to create symlinks:"
-	@echo "sudo ln -sf $(CURDIR)/oa/oa /usr/local/bin/oa"
-	@echo "sudo ln -sf $(CURDIR)/coa/coa /usr/local/bin/coa"
 	@echo "--------------------------------------"
 
 build_oa:
 	@echo "  MAKING oa..."
-	@$(MAKE) -C $(OA_DIR)
+	@$(MAKE) -C $(OA_DIR) VERSION="$(VERSION)"
 
 build_coa:
 	@echo "  MAKING coa..."
-	@cd $(COA_DIR) && go build -o coa ./src/*.go
+	@cd $(COA_DIR) && go build -o coa ./src
 
 clean:
 	@echo "  Pulizia in corso..."

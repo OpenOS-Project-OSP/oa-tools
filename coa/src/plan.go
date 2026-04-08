@@ -13,13 +13,13 @@ import (
 )
 
 // Action rappresenta un singolo blocco "command" nell'array "plan"
-// Viene utilizzato per mappare le azioni del motore C (oa) [cite: 31, 127, 282]
 type Action struct {
 	Command         string   `json:"command"`
 	VolID           string   `json:"volid,omitempty"`
 	OutputISO       string   `json:"output_iso,omitempty"`
 	CryptedPassword string   `json:"crypted_password,omitempty"`
 	RunCommand      string   `json:"run_command,omitempty"`
+	ExcludeList     string   `json:"exclude_list,omitempty"` // <--- AGGIUNTO
 	Args            []string `json:"args,omitempty"`
 }
 
@@ -41,6 +41,52 @@ type FlightPlan struct {
 	BootloadersPath string       `json:"bootloaders_path"`
 	Users           []UserConfig `json:"users"` // Array globale degli utenti [cite: 32]
 	Plan            []Action     `json:"plan"`
+}
+
+// generateExcludeList crea il file .list dinamico per mksquashfs
+func generateExcludeList(mode string) string {
+	outPath := "/tmp/coa/excludes.list"
+	var excludes []string
+
+	// 1. Esclusioni Base (Pulizia della ISO)
+	excludes = append(excludes,
+		"boot/efi/EFI",
+		"boot/loader/entries/",
+		"etc/fstab",
+		"var/lib/docker/",
+	)
+
+	// 2. Esclusioni specifiche per modalità
+	if mode != "clone" && mode != "crypted" {
+		// In standard mode pialliamo la root dell'host
+		excludes = append(excludes, "root/*")
+	}
+
+	// 3. Esclusioni Utente (leggiamo dal file se esiste)
+	// 3. Esclusioni Utente (Intelligenza di percorso)
+	userList := "/etc/coa/exclusion.list"
+	
+	// Se non esiste in /etc (non installato), usiamo il file di sviluppo locale
+	if _, err := os.Stat(userList); os.IsNotExist(err) {
+		userList = "conf/exclusion.list"
+	}
+
+	if data, err := os.ReadFile(userList); err == nil {
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			// Ignoriamo righe vuote e commenti
+			if line != "" && !strings.HasPrefix(line, "#") {
+				excludes = append(excludes, line)
+			}
+		}
+	}
+
+	// 4. Scriviamo il file finale per il motore C
+	os.MkdirAll("/tmp/coa", 0755)
+	os.WriteFile(outPath, []byte(strings.Join(excludes, "\n")+"\n"), 0644)
+
+	return outPath
 }
 
 // GeneratePlan costruisce il piano di volo dinamico in base alla distribuzione rilevata [cite: 333, 334]
@@ -102,11 +148,14 @@ func GeneratePlan(d *Distro, mode string, workPath string) FlightPlan {
 	// --- Task di "Vestizione" (Patching configurazioni) ---
 	if d.FamilyID == "fedora" {
 		plan.Plan = append(plan.Plan, Action{
-			Command:    "sys_run", // <-- AGGIORNATO (ex action_run)
+			Command:    "sys_run",
 			RunCommand: "cp",
 			Args:       []string{"/tmp/coa/configs/dracut/fedora.conf", "/etc/dracut.conf.d/coa.conf"},
 		})
 	}
+	
+	// --- Generiamo la lista di esclusioni dinamica ---
+	excludeFilePath := generateExcludeList(mode)
 
 	// Proseguiamo con il resto del piano standard
 	plan.Plan = append(plan.Plan,
@@ -114,7 +163,10 @@ func GeneratePlan(d *Distro, mode string, workPath string) FlightPlan {
 		Action{Command: "lay_livestruct"}, // Kernel extraction
 		Action{Command: "lay_isolinux"},   // BIOS bootloader
 		Action{Command: "lay_uefi"},       // UEFI bootloader
-		Action{Command: "lay_squash"},     // Compressione Turbo SquashFS
+		Action{
+			Command:     "lay_squash",
+			ExcludeList: excludeFilePath,  // <--- PASSIAMO IL FILE AL MOTORE C
+		},     // Compressione Turbo SquashFS		
 	)
 
 	// Inserzione modulare per cifratura

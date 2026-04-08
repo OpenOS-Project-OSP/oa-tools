@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-const ToolVersion = "0.5.0" // Sincronizzato con oa
+const ToolVersion = "0.5.1" // Sincronizzato con oa
 
 // getProjectPaths auto-rileva le directory corrette a prescindere da dove chiami 'coa'
 func getProjectPaths() (string, string, string) {
@@ -30,7 +30,8 @@ func handleBuild(d *Distro) {
 
 	// 1. Compilazione del motore C (oa)
 	fmt.Println("\033[1;34m[build]\033[0m Compiling 'oa' C engine...")
-	makeCmd := exec.Command("make", "-C", oaDir, "clean", "all")
+	// makeCmd := exec.Command("make", "-C", oaDir, "clean", "all")
+	makeCmd := exec.Command("make", "-C", oaDir, fmt.Sprintf("VERSION=%s", ToolVersion), "clean", "all")
 	makeCmd.Stdout = os.Stdout
 	makeCmd.Stderr = os.Stderr
 	if err := makeCmd.Run(); err != nil {
