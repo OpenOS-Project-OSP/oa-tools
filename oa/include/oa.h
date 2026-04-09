@@ -63,6 +63,7 @@ typedef struct {
 #include "hatch_fstab.h"
 #include "hatch_users.h"
 #include "hatch_uefi.h"
+#include "hatch_bios.h"
 
 // SYS (Utility Generiche)
 #include "sys_run.h"

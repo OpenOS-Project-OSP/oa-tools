@@ -19,6 +19,14 @@ type KrillAnswers struct {
 	UseLuks    bool
 }
 
+// isUEFI rileva se il sistema live è stato avviato in modalità UEFI
+func isUEFI() bool {
+	if _, err := os.Stat("/sys/firmware/efi"); err == nil {
+		return true
+	}
+	return false
+}
+
 // getRootDisk individua il disco fisico su cui sta girando il sistema attuale
 func getRootDisk() string {
 	cmd := "lsblk -n -o PKNAME $(findmnt -n -v -o SOURCE /) | head -n 1"
@@ -29,7 +37,7 @@ func getRootDisk() string {
 	return strings.TrimSpace(string(out))
 }
 
-// getAvailableDisks usa lsblk per trovare i dischi fisici reali del sistema, ESCLUDENDO l'host
+// getAvailableDisks usa lsblk per trovare i dischi fisici reali del sistema, ESCLUDENDO l'host, i loop e i cdrom
 func getAvailableDisks() []string {
 	rootDisk := getRootDisk() 
 
@@ -46,8 +54,13 @@ func getAvailableDisks() []string {
 		if len(parts) >= 2 {
 			diskName := parts[0]
 			
-			// LA CINTURA DI SICUREZZA: Nascondiamo il disco host
+			// LA CINTURA DI SICUREZZA 1: Nascondiamo il disco host
 			if diskName == rootDisk {
+				continue
+			}
+
+			// LA CINTURA DI SICUREZZA 2: Nascondiamo device loop (es. ISO montata/snap) e lettori ottici (sr0)
+			if strings.HasPrefix(diskName, "loop") || strings.HasPrefix(diskName, "sr") {
 				continue
 			}
 			
@@ -162,7 +175,7 @@ func generateInstallPlan(ans *KrillAnswers, disk string) {
 		Mode:       "install",
 		Plan: []Action{
 			{
-				Command:    "hatch_partition", // <-- AGGIORNATO
+				Command:    "hatch_partition",
 				RunCommand: disk,
 			},
 		},
@@ -176,27 +189,36 @@ func generateInstallPlan(ans *KrillAnswers, disk string) {
 		})
 	} else {
 		plan.Plan = append(plan.Plan, Action{
-			Command:    "hatch_format", // <-- AGGIORNATO
+			Command:    "hatch_format",
 			RunCommand: disk,
 		})
 	}
 
-	// Il cuore della schiusa: spacchettiamo, fstab, setup sistema e bootloader
+	// Il cuore della schiusa: spacchettiamo, fstab, setup sistema e base
 	plan.Plan = append(plan.Plan,
-		Action{Command: "hatch_unpack", RunCommand: disk}, // <-- AGGIORNATO
-		Action{Command: "hatch_fstab", RunCommand: disk},  // <-- AGGIORNATO
+		Action{Command: "hatch_unpack", RunCommand: disk},
+		Action{Command: "hatch_fstab", RunCommand: disk},
 		Action{
-			Command:    "sys_run", // <-- AGGIORNATO (ex action_run)
+			Command:    "sys_run",
 			RunCommand: "systemd-machine-id-setup",
 		},
 		Action{
 			Command:    "sys_run",
 			RunCommand: "sh",
 			Args:       []string{"-c", "echo " + ans.Hostname + " > /etc/hostname"},
-		},		Action{Command: "hatch_users"}, // <-- AGGIORNATO
-		Action{Command: "lay_initrd"},  // <-- AGGIORNATO (l'initrd condivide la logica della ISO)
-		Action{Command: "hatch_uefi", RunCommand: disk}, // <-- AGGIORNATO E CON DISCO FISICO!
+		},		
+		Action{Command: "hatch_users"},
+		Action{Command: "lay_initrd"},
 	)
+
+	// BIVIO INTELLIGENTE: Rilevamento Bootloader
+	if isUEFI() {
+		fmt.Println("\033[1;34m[krill]\033[0m UEFI boot detected. Planning EFI Grub installation.")
+		plan.Plan = append(plan.Plan, Action{Command: "hatch_uefi", RunCommand: disk})
+	} else {
+		fmt.Println("\033[1;34m[krill]\033[0m Legacy BIOS boot detected. Planning PC Grub installation.")
+		plan.Plan = append(plan.Plan, Action{Command: "hatch_bios", RunCommand: disk})
+	}
 
 	plan.Users = []UserConfig{
 		{
@@ -224,7 +246,6 @@ func generateInstallPlan(ans *KrillAnswers, disk string) {
 	fmt.Printf("\033[1;32m[SUCCESS]\033[0m Flight plan compiled and saved to \033[1m%s\033[0m\n", outPath)
 	fmt.Println("\033[1;33m[krill]\033[0m To execute physical installation: \033[1msudo oa /tmp/plan-install.json\033[0m")
 
-	// Riutilizziamo la logica di esecuzione esistente
+	// Esecuzione
 	executePlan(plan)
-	
 }

@@ -38,6 +38,29 @@ To ensure a "Zero-Footprint" operation and avoid system crashes, **oa** implemen
 
 ---
 
+## 💽 Universal Partitioning Strategy (Hatching)
+
+One of the greatest challenges during the physical installation of an operating system (the *Hatching* phase) is managing the dichotomy between **Legacy BIOS** firmware and modern **UEFI** systems. Traditionally, installers adopt complex conditional logic to create MBR (MS-DOS) tables for BIOS and GPT tables for UEFI.
+
+**oa** and **coa** overcome this by adopting an **Agnostic Universal Partitioning** strategy. 
+
+Regardless of the environment in which the Live system booted, the C engine (`hatch_partition.c`) always initializes the target disk with a **GPT** table (via `sgdisk`) strictly structured into three partitions:
+
+1. **BIOS Boot Partition (2MB, flag `ef02`)**: 
+   In GPT partitioning, there is no post-MBR gap where Legacy GRUB traditionally hides its `core.img`. This tiny partition gives Legacy GRUB exactly that space. If the system is installed in UEFI mode, this partition simply remains unused.
+2. **EFI System Partition (512MB, flag `ef00`)**:
+   Formatted as FAT32, it hosts the `.efi` payload (e.g., `bootx64.efi`). *Why create it even if installing on an old BIOS system?* To make the disk physically forward-compatible. If booted in BIOS, this partition isn't used for booting, but it ensures the disk skeleton is identical across all scenarios.
+3. **ROOT Partition (Remaining space, flag `8300`)**:
+   Formatted as EXT4, it contains the actual cloned or remastered filesystem.
+
+### The Advantages of the Agnostic Architecture
+* **"Blind" and Reliable C Engine**: The C code responsible for partitioning and unpacking doesn't need to query the system (no `if BIOS else UEFI` logic). It always executes the exact same sequence of instructions, drastically reducing the margin for bugs.
+* **Hard Disk Portability**: A disk formatted this way is "universal". Theoretically, a disk installed in BIOS mode can be extracted, inserted into a modern UEFI machine, and made bootable simply by restoring the bootloader into the pre-existing EFI partition, without resizing or moving partitions.
+
+The routing intelligence is exclusively delegated to the Go orchestrator (`coa krill`), which detects the host environment (the presence of `/sys/firmware/efi`) and injects only the relevant bootloader installation action into the JSON plan (`hatch_uefi` or `hatch_bios`), elegantly ignoring the unnecessary partition.
+
+---
+
 ## 🚀 Key Advantages
 
 * **Instant Setup**: The `liveroot` is ready for customization in milliseconds, regardless of the host size (10GB or 1TB).
