@@ -20,7 +20,7 @@ var AppVersion = strings.TrimSpace(rawVersion)
 func getProjectPaths() (string, string, string) {
 	cwd, _ := os.Getwd()
 	projRoot := cwd
-	// Se "oa" non esiste nella cartella corrente, significa che siamo dentro "coa" o altrove. 
+	// Se "oa" non esiste nella cartella corrente, significa che siamo dentro "coa" o altrove.
 	// Saliamo di un livello per trovare la radice (oa-tools).
 	if _, err := os.Stat(filepath.Join(cwd, "oa")); os.IsNotExist(err) {
 		projRoot = filepath.Join(cwd, "..")
@@ -87,12 +87,12 @@ func buildDebianPackage(projRoot, oaDir, coaDir string) {
 	// Struttura cartelle
 	os.MkdirAll(filepath.Join(buildDir, "DEBIAN"), 0755)
 	os.MkdirAll(filepath.Join(buildDir, "usr", "local", "bin"), 0755)
-	
+
 	manDir := filepath.Join(buildDir, "usr", "share", "man", "man1")
 	bashDir := filepath.Join(buildDir, "usr", "share", "bash-completion", "completions")
 	zshDir := filepath.Join(buildDir, "usr", "share", "zsh", "vendor-completions")
 	fishDir := filepath.Join(buildDir, "usr", "share", "fish", "vendor_completions.d")
-	
+
 	os.MkdirAll(manDir, 0755)
 	os.MkdirAll(bashDir, 0755)
 	os.MkdirAll(zshDir, 0755)
@@ -153,21 +153,21 @@ license=('GPL3')
 depends=('xorriso' 'squashfs-tools')
 
 package() {
+    # Usiamo "${startdir}" per puntare alla radice reale del progetto
     # Binaries
-    install -Dm755 "${srcdir}/oa/oa" "${pkgdir}/usr/local/bin/oa"
-    install -Dm755 "${srcdir}/coa/coa" "${pkgdir}/usr/local/bin/coa"
+    install -Dm755 "${startdir}/oa/oa" "${pkgdir}/usr/local/bin/oa"
+    install -Dm755 "${startdir}/coa/coa" "${pkgdir}/usr/local/bin/coa"
 
     # Man Pages
-    install -Dm644 "${srcdir}/coa/docs/man/"* -t "${pkgdir}/usr/share/man/man1/"
+    install -Dm644 "${startdir}/coa/docs/man/"* -t "${pkgdir}/usr/share/man/man1/"
 
     # Autocompletions
-    install -Dm644 "${srcdir}/coa/docs/completion/coa.bash" "${pkgdir}/usr/share/bash-completion/completions/coa"
-    install -Dm644 "${srcdir}/coa/docs/completion/coa.zsh" "${pkgdir}/usr/share/zsh/vendor-completions/_coa"
-    install -Dm644 "${srcdir}/coa/docs/completion/coa.fish" "${pkgdir}/usr/share/fish/vendor_completions.d/coa.fish"
+    install -Dm644 "${startdir}/coa/docs/completion/coa.bash" "${pkgdir}/usr/share/bash-completion/completions/coa"
+    install -Dm644 "${startdir}/coa/docs/completion/coa.zsh" "${pkgdir}/usr/share/zsh/vendor-completions/_coa"
+    install -Dm644 "${startdir}/coa/docs/completion/coa.fish" "${pkgdir}/usr/share/fish/vendor_completions.d/coa.fish"
 }
 `, AppVersion)
 
 	os.WriteFile(filepath.Join(projRoot, "PKGBUILD"), []byte(pkgbuildContent), 0644)
 	fmt.Printf("\033[1;32m[SUCCESS]\033[0m \033[1mPKGBUILD\033[0m generated in the project root.\n")
-	fmt.Println("To package and install on Arch, run: \033[1mmakepkg -si\033[0m")
 }
