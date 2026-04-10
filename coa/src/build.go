@@ -119,9 +119,9 @@ func buildDebianPackage(projRoot, oaDir, coaDir string) {
 Version: %s
 Architecture: amd64
 Maintainer: Piero Proietti <piero.proietti@gmail.com>
-Depends: squashfs-tools, xorriso, live-boot, live-boot-initramfs-tools
-Description: oa-tools universal Linux remastering.
- coa is the Mind and oa is the Arm.
+Depends: squashfs-tools, xorriso, live-boot, live-boot-initramfs-tools, dosfstools, mtools
+Conflicts: penguins-eggs
+Description: coa is the mind and oa the arm
 `, AppVersion)
 
 	os.WriteFile(filepath.Join(buildDir, "DEBIAN", "control"), []byte(controlContent), 0644)
@@ -151,6 +151,7 @@ pkgdesc="oa-tools universal Linux remastering"
 arch=('x86_64')
 license=('GPL3')
 depends=('archiso' 'xorriso' 'squashfs-tools')
+conflicts=('penguins-eggs')
 
 package() {
     # Usiamo "${startdir}" per puntare alla radice reale del progetto
