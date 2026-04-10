@@ -67,11 +67,9 @@ func extractTarGz(r io.Reader, dest string) error {
 			return err
 		}
 
-		// --- LOGICA DI APPIATTIMENTO ROBUSTA ---
 		cleanPath := filepath.Clean(header.Name)
 		parts := strings.Split(cleanPath, string(filepath.Separator))
 
-		// Saltiamo sempre il primo livello (es. "bootloaders/")
 		var relPath string
 		if len(parts) > 1 {
 			relPath = filepath.Join(parts[1:]...)
@@ -80,7 +78,6 @@ func extractTarGz(r io.Reader, dest string) error {
 		}
 
 		target := filepath.Join(dest, relPath)
-		// ----------------------------------------
 
 		switch header.Typeflag {
 		case tar.TypeDir:

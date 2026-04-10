@@ -37,7 +37,7 @@ int lay_livestruct(OA_Context *ctx) {
     // -------------------------------------------------------------------------
     
     // TENTATIVO A: Nome specifico con versione (Standard Debian/Ubuntu)
-    snprintf(cmd, sizeof(cmd), "cp /boot/vmlinuz-%s %s/vmlinuz", kversion, live_dir);
+    snprintf(cmd, sizeof(cmd), "cp /boot/vmlinuz-%s %s/vmlinuz 2>/dev/null", kversion, live_dir);
     if (system(cmd) == 0) {
         LOG_INFO("Kernel extracted using versioned path: /boot/vmlinuz-%s", kversion);
         return 0;
@@ -45,14 +45,14 @@ int lay_livestruct(OA_Context *ctx) {
 
     // TENTATIVO B: Nome generico Arch Linux (vmlinuz-linux)
     LOG_INFO("Versioned kernel path failed, trying Arch Linux standard...");
-    snprintf(cmd, sizeof(cmd), "cp /boot/vmlinuz-linux %s/vmlinuz", live_dir);
+    snprintf(cmd, sizeof(cmd), "cp /boot/vmlinuz-linux %s/vmlinuz 2>/dev/null", live_dir);
     if (system(cmd) == 0) {
         LOG_INFO("Kernel extracted using Arch standard path: /boot/vmlinuz-linux");
         return 0;
     }
 
     // TENTATIVO C: Nome generico Arch Linux LTS (vmlinuz-linux-lts)
-    snprintf(cmd, sizeof(cmd), "cp /boot/vmlinuz-linux-lts %s/vmlinuz", live_dir);
+    snprintf(cmd, sizeof(cmd), "cp /boot/vmlinuz-linux-lts %s/vmlinuz 2>/dev/null", live_dir);
     if (system(cmd) == 0) {
         LOG_INFO("Kernel extracted using Arch LTS path: /boot/vmlinuz-linux-lts");
         return 0;
@@ -60,7 +60,7 @@ int lay_livestruct(OA_Context *ctx) {
 
     // TENTATIVO D: Fallback estremo tramite symlink in root (Passepartout) 
     LOG_WARN("Standard paths failed, falling back to root symlink /vmlinuz");
-    snprintf(cmd, sizeof(cmd), "cp -L /vmlinuz %s/vmlinuz", live_dir);
+    snprintf(cmd, sizeof(cmd), "cp -L /vmlinuz %s/vmlinuz 2>/dev/null", live_dir);
     
     if (system(cmd) != 0) {
         LOG_ERR("Failed to extract kernel from all known locations.");

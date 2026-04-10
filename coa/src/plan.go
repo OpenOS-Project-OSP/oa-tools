@@ -88,32 +88,29 @@ func generateExcludeList(mode string) string {
 // GeneratePlan costruisce il piano di volo dinamico
 func GeneratePlan(d *Distro, mode string, workPath string) FlightPlan {
 	plan := FlightPlan{
-		PathLiveFs: workPath,
-		Mode:       mode,
-		Family:     d.FamilyID, // Comunichiamo la famiglia al braccio C
+		PathLiveFs:      workPath,
+		Mode:            mode,
+		Family:          d.FamilyID,
+		BootloadersPath: BootloaderRoot, // <--- UNIFORMATO PER TUTTI QUI
 	}
 
-	// 1. Configurazione Parametri di Boot e Initramfs
+	// 1. Configurazione Parametri di Boot
 	bootParams := "boot=live components quiet splash"
 	if d.FamilyID == "archlinux" {
 		bootParams = "archisobasedir=arch archisolabel=OA_LIVE quiet splash"
 	}
 
+	// SWITCH PER L'INITRAMFS
 	switch d.FamilyID {
 	case "debian":
 		plan.InitrdCmd = "mkinitramfs -o {{out}} {{ver}}"
-		plan.BootloadersPath = ""
 	case "archlinux":
-		// Il trucco di Arch: base dir e label per archiso
-		// bootParams = "archisobasedir=live archisolabel=OA_LIVE quiet splash"
-		plan.InitrdCmd = "mkinitcpio -g {{out}} -k {{ver}}"
-		plan.BootloadersPath = BootloaderRoot
+		// Interno a chroot
+		plan.InitrdCmd = fmt.Sprintf("mkinitcpio -c %s/liveroot/etc/mkinitcpio.conf -g {{out}} -k {{ver}}", workPath)
 	case "fedora", "opensuse":
 		plan.InitrdCmd = "dracut --nomadas --force {{out}} {{ver}}"
-		plan.BootloadersPath = BootloaderRoot
 	default:
 		plan.InitrdCmd = "mkinitramfs -o {{out}} {{ver}}"
-		plan.BootloadersPath = ""
 	}
 
 	// 2. Configurazione Utenti (Globale)
