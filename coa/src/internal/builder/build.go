@@ -11,9 +11,12 @@ import (
 
 var AppVersion string
 
-// parseGitVersion separa "0.6.2-5-g2504384" in (0.6.2, 5)
+// parseGitVersion separa "v0.6.4-5-g2504384" in (0.6.4, 5) ignorando la 'v'
 func parseGitVersion(v string) (string, string) {
-	parts := strings.Split(v, "-")
+	// Rimuoviamo la 'v' iniziale se presente, essenziale per i pacchetti
+	cleanV := strings.TrimPrefix(v, "v")
+
+	parts := strings.Split(cleanV, "-")
 	baseVer := parts[0]
 	relNum := "1"
 
@@ -191,7 +194,7 @@ package() {
 		fmt.Printf("\033[1;31m[ERROR]\033[0m Failed to write PKGBUILD: %v\n", err)
 		return
 	}
-	fmt.Printf("\033[1;32m[SUCCESS]\033[0m PKGBUILD generato: v%s rel%s\n", baseVer, relNum)
+	fmt.Printf("\033[1;32m[SUCCESS]\033[0m PKGBUILD generato: %s-%s\n", baseVer, relNum)
 }
 
 func getProjectPaths() (string, string, string) {

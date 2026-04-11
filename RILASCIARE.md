@@ -45,6 +45,7 @@ Ora che il codice è taggato correttamente, lancia la build per generare i pacch
 make
 coa/coa build
 ```
+On Archlinux `makepkg -ci` on Debian `sudo dpkg -i oa-tools-0.6.4-1`.
 
 ## 6. Allineare il Remote (Push)
 Poiché abbiamo riscritto la storia del nostro repository locale, GitHub (o il server remoto) rifiuterà un push standard, avvisandoti che le cronologie non combaciano. 
