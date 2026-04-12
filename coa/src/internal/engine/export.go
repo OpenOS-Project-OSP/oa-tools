@@ -86,22 +86,26 @@ func HandleExportIso(clean bool) {
 	}
 }
 
-// HandleExportPkg esporta i pacchetti nativi (DEB o Arch)
+// HandleExportPkg esporta i pacchetti nativi (DEB, Arch o RPM)
 func HandleExportPkg(clean bool) {
 	fmt.Println("\033[1;34m[PROCESS]\033[0m Searching for native packages...")
 
-	// 1. Cerchiamo SOLO i pacchetti generati da noi
+	// 1. Cerchiamo i pacchetti generati (DEB, Arch e ora RPM)
 	debFiles, _ := filepath.Glob("oa-tools*.deb")
 	archFiles, _ := filepath.Glob("oa-tools*.pkg.tar.zst")
+	rpmFiles, _ := filepath.Glob("oa-tools*.rpm") // Aggiunta ricerca RPM
+
 	var allPackages []string
-	allPackages = append(append(allPackages, debFiles...), archFiles...)
+	allPackages = append(allPackages, debFiles...)
+	allPackages = append(allPackages, archFiles...)
+	allPackages = append(allPackages, rpmFiles...) // Inclusione nel pool di invio
 
 	if len(allPackages) == 0 {
 		fmt.Println("\033[1;31m[ERROR]\033[0m No native packages found.")
 		return
 	}
 
-	// --- INIZIO SETUP SSH MULTIPLEXING ---
+	// --- SETUP SSH MULTIPLEXING ---
 	socketPath := "/tmp/coa-ssh-mux-pkg"
 	muxArgs := []string{
 		"-o", "ControlMaster=auto",
@@ -109,17 +113,15 @@ func HandleExportPkg(clean bool) {
 		"-o", "ControlPersist=2m",
 	}
 
-	// Chiude la connessione master alla fine della funzione
 	defer func() {
 		exec.Command("ssh", "-O", "exit", "-o", "ControlPath="+socketPath, remoteUserHost).Run()
 		os.Remove(socketPath)
 	}()
-	// --- FINE SETUP ---
 
 	if clean {
 		fmt.Printf("\033[1;33m[CLEAN]\033[0m Removing old oa-tools packages on %s...\n", remoteUserHost)
 
-		// 2. Costruiamo il target di pulizia in modo DINAMICO
+		// 2. Costruzione dinamica del target di pulizia
 		var rmTargets string
 		if len(debFiles) > 0 {
 			rmTargets += remotePkgPath + "oa-tools*.deb "
@@ -127,12 +129,14 @@ func HandleExportPkg(clean bool) {
 		if len(archFiles) > 0 {
 			rmTargets += remotePkgPath + "oa-tools*.pkg.tar.zst "
 		}
+		if len(rpmFiles) > 0 {
+			rmTargets += remotePkgPath + "oa-tools*.rpm " // Aggiunta pulizia RPM
+		}
 
 		cleanCmdStr := "rm -f " + rmTargets
 		sshArgs := append(muxArgs, remoteUserHost, cleanCmdStr)
 
 		cleanCmd := exec.Command("ssh", sshArgs...)
-		// È fondamentale passare lo Stdin affinché il prompt della password sia visibile se clean=true
 		cleanCmd.Stdout, cleanCmd.Stderr, cleanCmd.Stdin = os.Stdout, os.Stderr, os.Stdin
 
 		if err := cleanCmd.Run(); err != nil {
@@ -142,7 +146,7 @@ func HandleExportPkg(clean bool) {
 		}
 	}
 
-	// 3. Iteriamo su tutti i pacchetti trovati per inviarli (utile per Arch che ha main + debug)
+	// 3. Invio di tutti i pacchetti trovati
 	for i, pkg := range allPackages {
 		fmt.Printf("\033[1;34m[COPY]\033[0m Sending \033[1m%s\033[0m to Proxmox...\n", pkg)
 
@@ -150,7 +154,6 @@ func HandleExportPkg(clean bool) {
 		scpArgs := append(muxArgs, pkg, dstStr)
 
 		scpCmd := exec.Command("scp", scpArgs...)
-		// Passiamo lo Stdin solo al primo file, così se clean=false chiede la password una volta sola
 		if i == 0 {
 			scpCmd.Stdout, scpCmd.Stderr, scpCmd.Stdin = os.Stdout, os.Stderr, os.Stdin
 		} else {
