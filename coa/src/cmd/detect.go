@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"coa/src/internal/distro"
+	"coa/src/internal/engine"
+
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +18,14 @@ It does not save this state or alter any configuration; it simply provides a cle
 	Example: `  # Display the host system profile
   coa detect`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Logica di visualizzazione (es. GetDiscovery() e print)
+		// Controllo sudo: è un comando informativo, non serve root
+		CheckSudoRequirements(cmd.Name(), false)
+
+		// 1. Rileva la distribuzione host
+		myDistro := distro.NewDistro()
+
+		// 2. Passa l'oggetto all'engine per la stampa a video
+		engine.HandleDetect(myDistro)
 	},
 }
 
