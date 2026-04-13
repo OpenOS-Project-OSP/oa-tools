@@ -127,7 +127,7 @@ func generateInstallPlan(ans *KrillAnswers, disk string) {
 		Mode:       "install",
 		Plan: []engine.Action{
 			{
-				Command:    "hatch_partition",
+				Command:    "oa_install_partition",
 				RunCommand: disk,
 			},
 		},
@@ -135,43 +135,43 @@ func generateInstallPlan(ans *KrillAnswers, disk string) {
 
 	if ans.UseLuks {
 		plan.Plan = append(plan.Plan, engine.Action{
-			Command:         "hatch_format_luks",
+			Command:         "oa_install_format_luks",
 			RunCommand:      disk,
 			CryptedPassword: ans.Password,
 		})
 	} else {
 		plan.Plan = append(plan.Plan, engine.Action{
-			Command:    "hatch_format",
+			Command:    "oa_install_format",
 			RunCommand: disk,
 		})
 	}
 
 	plan.Plan = append(plan.Plan,
 		engine.Action{
-			Command:    "hatch_unpack",
+			Command:    "oa_install_unpack",
 			RunCommand: disk,
 			Args:       []string{squashPath},
 		},
-		engine.Action{Command: "hatch_fstab", RunCommand: disk},
+		engine.Action{Command: "oa_install_fstab", RunCommand: disk},
 		engine.Action{
-			Command:    "sys_run",
+			Command:    "oa_sys_run",
 			RunCommand: "systemd-machine-id-setup",
 		},
 		engine.Action{
-			Command:    "sys_run",
+			Command:    "oa_sys_run",
 			RunCommand: "sh",
 			Args:       []string{"-c", "echo " + ans.Hostname + " > /etc/hostname"},
 		},
-		engine.Action{Command: "hatch_users"},
-		engine.Action{Command: "lay_initrd"},
+		engine.Action{Command: "oa_install_users"},
+		engine.Action{Command: "oa_remaster_initrd"},
 	)
 
 	if isUEFI() {
 		fmt.Println("\033[1;34m[krill]\033[0m UEFI boot detected. Planning EFI Grub installation.")
-		plan.Plan = append(plan.Plan, engine.Action{Command: "hatch_uefi", RunCommand: disk})
+		plan.Plan = append(plan.Plan, engine.Action{Command: "oa_install_uefi", RunCommand: disk})
 	} else {
 		fmt.Println("\033[1;34m[krill]\033[0m Legacy BIOS boot detected. Planning PC Grub installation.")
-		plan.Plan = append(plan.Plan, engine.Action{Command: "hatch_bios", RunCommand: disk})
+		plan.Plan = append(plan.Plan, engine.Action{Command: "oa_install_bios", RunCommand: disk})
 	}
 
 	plan.Users = []engine.UserConfig{

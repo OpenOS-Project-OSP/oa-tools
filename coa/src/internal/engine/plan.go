@@ -16,7 +16,6 @@ import (
 )
 
 // BootloaderRoot definisce dove vengono estratti i bootloader.
-// L'abbiamo spostata qui da utils.go per centralizzare le costanti del motore.
 const BootloaderRoot = "/tmp/coa/bootloaders"
 
 // Action rappresenta un singolo blocco "command" nell'array "plan"
@@ -45,7 +44,7 @@ type UserConfig struct {
 type FlightPlan struct {
 	PathLiveFs      string       `json:"pathLiveFs"`
 	Mode            string       `json:"mode"`
-	Family          string       `json:"family"` // Passiamo la famiglia per logiche specifiche in C
+	Family          string       `json:"family"`
 	InitrdCmd       string       `json:"initrd_cmd"`
 	BootloadersPath string       `json:"bootloaders_path"`
 	Users           []UserConfig `json:"users"`
@@ -57,7 +56,6 @@ func generateExcludeList(mode string) string {
 	outPath := "/tmp/coa/excludes.list"
 	var excludes []string
 
-	// 1. Esclusioni Base (Pulizia della ISO)
 	excludes = append(excludes,
 		"boot/efi/EFI",
 		"boot/loader/entries/",
@@ -65,12 +63,10 @@ func generateExcludeList(mode string) string {
 		"var/lib/docker/",
 	)
 
-	// 2. Esclusioni specifiche per modalità
 	if mode != "clone" && mode != "crypted" {
 		excludes = append(excludes, "root/*")
 	}
 
-	// 3. Esclusioni Utente
 	userList := "/etc/coa/exclusion.list"
 	if _, err := os.Stat(userList); os.IsNotExist(err) {
 		userList = "conf/exclusion.list"
@@ -101,7 +97,6 @@ func GeneratePlan(d *distro.Distro, mode string, workPath string) FlightPlan {
 		BootloadersPath: BootloaderRoot,
 	}
 
-	// 1. Configurazione Parametri di Boot
 	bootParams := "boot=live components"
 	switch d.FamilyID {
 	case "archlinux":
@@ -110,21 +105,17 @@ func GeneratePlan(d *distro.Distro, mode string, workPath string) FlightPlan {
 		bootParams = "root=live:CDLABEL=OA_LIVE rd.live.image rd.live.dir=live rd.live.squashimg=filesystem.squashfs selinux=0"
 	}
 
-	// SWITCH PER L'INITRAMFS
 	switch d.FamilyID {
 	case "debian":
 		plan.InitrdCmd = "mkinitramfs -o {{out}} {{ver}}"
 	case "archlinux":
-		// MODIFICA 1: Usa il file custom per Arch
 		plan.InitrdCmd = "mkinitcpio -c /etc/coa_mkinitcpio.conf -g {{out}} -k {{ver}}"
 	case "fedora", "rhel", "centos", "rocky", "almalinux":
-		// MODIFICA 2: Ripristinati i driver essenziali per Fedora
 		plan.InitrdCmd = "dracut --no-hostonly --nomdadmconf --nolvmconf --xz --add dmsquash-live --add rootfs-block --add bash --add-drivers \"overlay squashfs loop iso9660 cdrom sr_mod\" --force {{out}} {{ver}}"
 	default:
 		plan.InitrdCmd = "mkinitramfs -o {{out}} {{ver}}"
 	}
 
-	// 2. Configurazione Utenti (Globale) e Inizializzazione Piano
 	if mode == "standard" {
 		adminGroup := "sudo"
 		if d.FamilyID == "archlinux" || d.FamilyID == "fedora" || d.FamilyID == "rhel" || d.FamilyID == "centos" || d.FamilyID == "rocky" || d.FamilyID == "almalinux" {
@@ -142,53 +133,42 @@ func GeneratePlan(d *distro.Distro, mode string, workPath string) FlightPlan {
 			},
 		}
 
-		// MODIFICA 3: Inizializziamo subito l'array del piano
 		plan.Plan = []Action{
-			{Command: "lay_users"},
+			{Command: "oa_remaster_users"},
 		}
 
-		// Aggiungiamo i permessi Sudoers
 		sudoersDir := "/etc/sudoers.d"
 		sudoersFile := "/etc/sudoers.d/00-oa-live"
 		sudoersContent := fmt.Sprintf("%%%s ALL=(ALL) NOPASSWD: ALL", adminGroup)
 		sudoersCmd := fmt.Sprintf("mkdir -p %s && echo '%s' > %s && chmod 0440 %s", sudoersDir, sudoersContent, sudoersFile, sudoersFile)
 
 		plan.Plan = append(plan.Plan, Action{
-			Command:    "sys_run",
+			Command:    "oa_sys_run",
 			RunCommand: "sh",
 			Args:       []string{"-c", sudoersCmd},
 		})
 
 	} else {
 		plan.Users = []UserConfig{}
-		// Se non siamo in standard, inizializziamo comunque il piano
 		plan.Plan = []Action{
-			{Command: "lay_users"},
+			{Command: "oa_remaster_users"},
 		}
 	}
 
-	// Task specifici per Fedora/RHEL
 	if d.FamilyID == "fedora" || d.FamilyID == "rhel" || d.FamilyID == "centos" || d.FamilyID == "rocky" || d.FamilyID == "almalinux" {
-
 		targetConfDir := fmt.Sprintf("%s/liveroot/etc/dracut.conf.d", workPath)
 		targetConfPath := fmt.Sprintf("%s/coa.conf", targetConfDir)
-
-		// Prepariamo il testo del file formattato per il comando echo -e
 		dracutConfig := `hostonly="no"\nadd_dracutmodules+=" dmsquash-live rootfs-block bash "\ncompress="xz"`
-
-		// Costruiamo il comando shell che scrive direttamente il file
 		writeCmd := fmt.Sprintf(`echo -e '%s' > %s`, dracutConfig, targetConfPath)
 
-		// 1. Assicuriamoci che la cartella esista
 		plan.Plan = append(plan.Plan, Action{
-			Command:    "sys_run",
+			Command:    "oa_sys_run",
 			RunCommand: "mkdir",
 			Args:       []string{"-p", targetConfDir},
 		})
 
-		// 2. Scriviamo il file a destinazione usando sh -c
 		plan.Plan = append(plan.Plan, Action{
-			Command:    "sys_run",
+			Command:    "oa_sys_run",
 			RunCommand: "sh",
 			Args:       []string{"-c", writeCmd},
 		})
@@ -196,26 +176,24 @@ func GeneratePlan(d *distro.Distro, mode string, workPath string) FlightPlan {
 
 	excludeFilePath := generateExcludeList(mode)
 
-	// Aggiungiamo le azioni principali passando i bootParams
 	plan.Plan = append(plan.Plan,
-		Action{Command: "lay_initrd"},
-		Action{Command: "lay_livestruct"},
-		Action{Command: "lay_isolinux", BootParams: bootParams},
-		Action{Command: "lay_uefi", BootParams: bootParams},
+		Action{Command: "oa_remaster_initrd"},
+		Action{Command: "oa_remaster_livestruct"},
+		Action{Command: "oa_remaster_isolinux", BootParams: bootParams},
+		Action{Command: "oa_remaster_uefi", BootParams: bootParams},
 		Action{
-			Command:     "lay_squash",
+			Command:     "oa_remaster_squash",
 			ExcludeList: excludeFilePath,
 		},
 	)
 
 	if mode == "crypted" {
 		plan.Plan = append(plan.Plan, Action{
-			Command:         "lay_crypted",
-			CryptedPassword: "evolution", // Qui potremmo in futuro parametrizzarlo da CLI
+			Command:         "oa_remaster_crypted",
+			CryptedPassword: "evolution",
 		})
 	}
 
-	// Definizione nome ISO
 	hostname, _ := os.Hostname()
 	timestamp := time.Now().Format("2006-01-02_1504")
 	arch := runtime.GOARCH
@@ -235,12 +213,12 @@ func GeneratePlan(d *distro.Distro, mode string, workPath string) FlightPlan {
 	isoName := fmt.Sprintf("egg-of_%s_%s_%s.iso", distroTag, arch, timestamp)
 
 	plan.Plan = append(plan.Plan, Action{
-		Command:   "lay_iso",
+		Command:   "oa_remaster_iso",
 		VolID:     "OA_LIVE",
 		OutputISO: isoName,
 	})
 
-	plan.Plan = append(plan.Plan, Action{Command: "lay_cleanup"})
+	plan.Plan = append(plan.Plan, Action{Command: "oa_remaster_cleanup"})
 
 	return plan
 }
