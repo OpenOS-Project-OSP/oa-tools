@@ -84,7 +84,7 @@ func generateCommandIndex(rootCmd *cobra.Command, outputDir string) error {
 
 		// Logica di smistamento nelle categorie
 		switch cmd.Name() {
-		case "produce", "krill":
+		case "remaster", "sysinstall": // Aggiornati i nomi qui
 			categories["🚀 Core Actions"] = append(categories["🚀 Core Actions"], cmd)
 		case "export":
 			categories["📦 Export & Sync"] = append(categories["📦 Export & Sync"], cmd)

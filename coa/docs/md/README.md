@@ -4,8 +4,8 @@ Benvenuto nella guida ai comandi di **coa**. Qui trovi l'elenco completo delle f
 
 ## 🚀 Core Actions
 
-- [**krill**](coa_krill.md) - Start the system installation (The Hatching)
-- [**produce**](coa_produce.md) - Start a system remastering production flight
+- [**remaster**](coa_remaster.md) - Start a system remastering flight (ISO production)
+- [**sysinstall**](coa_sysinstall.md) - Install the live system to a physical disk
 
 ## 📦 Export & Sync
 

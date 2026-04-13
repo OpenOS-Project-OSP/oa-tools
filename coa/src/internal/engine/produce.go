@@ -62,7 +62,7 @@ func ExecutePlan(plan FlightPlan) {
 		log.Fatalf("\033[1;31m[coa]\033[0m JSON Error: %v", err)
 	}
 
-	tmpJsonPath := "/tmp/plan_coa_tmp.json"
+	tmpJsonPath := "/tmp/remaster.json"
 	err = os.WriteFile(tmpJsonPath, jsonData, 0644)
 	if err != nil {
 		log.Fatalf("\033[1;31m[coa]\033[0m Temp file error: %v", err)

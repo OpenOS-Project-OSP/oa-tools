@@ -191,7 +191,7 @@ func generateInstallPlan(ans *KrillAnswers, disk string) {
 		return
 	}
 
-	outPath := "/tmp/plan-install.json"
+	outPath := "/tmp/sysinstall.json"
 	if err := os.WriteFile(outPath, jsonData, 0644); err != nil {
 		fmt.Printf("\033[1;31m[ERROR]\033[0m Failed to write plan: %v\n", err)
 		return
