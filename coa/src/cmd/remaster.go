@@ -22,7 +22,7 @@ It uses OverlayFS for a zero-copy approach and produces artifacts ready for dist
 	Run: func(cmd *cobra.Command, args []string) {
 		CheckSudoRequirements(cmd.Name(), true)
 		myDistro := distro.NewDistro()
-		engine.HandleProduce(produceMode, producePath, myDistro) // Il gestore interno può restare Produce o essere rinominato in HandleRemaster
+		engine.HandleRemaster(produceMode, producePath, myDistro) // Il gestore interno può restare Produce o essere rinominato in HandleRemaster
 	},
 }
 

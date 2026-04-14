@@ -266,7 +266,10 @@ func getAvailableDisks() []string {
 		parts := strings.Fields(line)
 		if len(parts) >= 2 {
 			diskName := parts[0]
-			if diskName == rootDisk || strings.HasPrefix(diskName, "loop") || strings.HasPrefix(diskName, "sr") {
+			if diskName == rootDisk ||
+				strings.HasPrefix(diskName, "loop") ||
+				strings.HasPrefix(diskName, "zram") ||
+				strings.HasPrefix(diskName, "sr") {
 				continue
 			}
 			diskStr := fmt.Sprintf("/dev/%s - %s %s", diskName, parts[1], strings.Join(parts[2:], " "))

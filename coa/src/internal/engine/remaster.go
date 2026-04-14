@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 )
 
-// HandleProduce gestisce la creazione della ISO
-func HandleProduce(mode string, workPath string, d *distro.Distro) {
+// HandleRemaster gestisce la creazione della ISO
+func HandleRemaster(mode string, workPath string, d *distro.Distro) {
 	tempConfigPath := "/tmp/coa/configs"
 	fmt.Printf("\033[1;32m[coa]\033[0m Extracting internal configurations to %s...\n", tempConfigPath)
 
