@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Inizializziamo il logger subito (es. oa.log per chiarezza)
-    oa_init_log("oa.log");
+    oa_init_log("/var/log/oa-tools.log");
     LOG_INFO("=== STARTING OA ENGINE ===");
     LOG_INFO("Input plan: %s", argv[1]);
 

@@ -2,6 +2,10 @@
 
 Benvenuto nella guida ai comandi di **coa**. Qui trovi l'elenco completo delle funzionalità orchestrate dal motore.
 
+## 📦 Export & Sync
+
+- [**export**](coa_export.md) - Export artifacts (iso, pkg) to a remote Proxmox storage
+
 ## ⚙️ System Tools
 
 - [**adapt**](coa_adapt.md) - Adapt the video resolution to the Virtual Machine window
@@ -16,8 +20,4 @@ Benvenuto nella guida ai comandi di **coa**. Qui trovi l'elenco completo delle f
 
 - [**remaster**](coa_remaster.md) - Start a system remastering flight (ISO production)
 - [**sysinstall**](coa_sysinstall.md) - Install the live system to a physical disk
-
-## 📦 Export & Sync
-
-- [**export**](coa_export.md) - Export artifacts (iso, pkg) to a remote Proxmox storage
 

@@ -37,7 +37,7 @@ clean:
 	@echo "  Pulizia binari e piani di volo..."
 	@$(MAKE) -C $(OA_DIR) clean
 	@rm -f $(COA_BIN)
-	@rm -f /tmp/remaster.json /tmp/sysinstall.json
+	@rm -f /tmp/oa-remaster.json /tmp/sysinstall.json
 	@echo "  Rimozione pacchetti nativi ($(PACKAGES))..."
 	@rm -f $(PACKAGES)
 	@echo "  Pulizia documentazione e completamenti..."
