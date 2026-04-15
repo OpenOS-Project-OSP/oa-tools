@@ -1,5 +1,28 @@
 # Changelog - oa-tools
 
+# Changelog - oa-tools
+
+## [0.6.5] - 2026-04-15
+
+### 🚀 Added
+- **"eggs" Alias Support**: Implemented dual binary identity. The package now installs symlinks and shell completion patches (Bash/Zsh/Fish) to allow using the `eggs` command as an alias for `coa`.
+- **Standardized Naming Engine**: Isolated naming logic into `naming.go`. ISOs now follow the format: `egg-of_[distro]-[codename]-[hostname]_[arch]_[timestamp].iso`.
+
+### 🛠 Changed
+- **CLI Semantic Refactoring**: Renamed core commands for clarity: `produce` is now **`remaster`** and `krill` is now **`sysinstall`**.
+- **Build System Decoupling**: Split the monolithic `build.go` into distribution-specific handlers (`build_debian.go`, `build_arch.go`, `build_fedora.go`) for granular dependency and metadata management.
+- **Universal Boot Extraction**: Refactored boot file extraction to natively support Arch, Debian, and Fedora structures during the `remaster` phase.
+- **Arch Linux Initrd Refactor**: Optimized ramdisk generation on Arch via deeper `mkinitcpio` integration.
+
+### 🐛 Fixed
+- **Fedora 43 Boot (BLS/EXT4)**: Resolved "grub rescue" issues by forcing the deactivation of *Boot Loader Specification* (`GRUB_ENABLE_BLSCFG=false`) and applying EXT4 compatibility flags (`^metadata_csum_seed`, `^orphan_file`) during formatting.
+- **Installer Hang (Sync & Cleanup)**: Fixed a deadlock during the final Krill phase on Fedora by making `/var/lib/live` cleanup selective for Debian and introducing a forced `sync` before unmounting partitions.
+- **Chroot Pathing**: Fixed path resolution errors during `sys_shell` execution in chroot environments, ensuring correct injection of hostname and sudoers.
+
+### Packaging
+- **RPM Dependency Mapping**: Corrected Fedora RPM metadata by mapping `sgdisk` requirements to the `gdisk` package.
+- **Symlink Integration**: All native packages now include symlinks for binaries, man pages, and shell completions for the `eggs` alias.
+
 ## [0.6.1] - 2026-04-10
 
 ### Fixed
