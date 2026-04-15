@@ -14,6 +14,7 @@ Benvenuto nella guida ai comandi di **coa**. Qui trovi l'elenco completo delle f
 ## ⚙️ System Tools
 
 - [**adapt**](coa_adapt.md) - Adapt the video resolution to the Virtual Machine window
+- [**brain**](coa_brain.md) - Manage the modular configuration (brain.d)
 - [**build**](coa_build.md) - Compile binaries and generate native distribution packages (.deb, PKGBUILD)
 - [**detect**](coa_detect.md) - Display detected host system information
 - [**help**](coa_help.md) - Help about any command

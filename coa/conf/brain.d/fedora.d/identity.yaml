@@ -1,7 +1,8 @@
 # [ coa brain unit ]
-# family: archlinux
-# area:   identitfy
+# family: fedora
+# area:   identity
 # --------------------------------------------------
+
 identity:
   admin_group: "wheel"
-  user_groups: ["video", "audio", "autologin"]
+  user_groups: ["audio", "video", "plugdev", "netdev", "autologin"]

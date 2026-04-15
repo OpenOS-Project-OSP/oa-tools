@@ -15,6 +15,7 @@ coa is the orchestrator written in Go, designed to be the "Mind" behind the GNU/
 ### SEE ALSO
 
 * [coa adapt](coa_adapt.md)	 - Adapt the video resolution to the Virtual Machine window
+* [coa brain](coa_brain.md)	 - Manage the modular configuration (brain.d)
 * [coa build](coa_build.md)	 - Compile binaries and generate native distribution packages (.deb, PKGBUILD)
 * [coa detect](coa_detect.md)	 - Display detected host system information
 * [coa export](coa_export.md)	 - Export artifacts (iso, pkg) to a remote Proxmox storage

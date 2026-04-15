@@ -1,7 +1,7 @@
 # [ coa brain unit ]
-# family: archlinux
+# family: fedora
 # area:   layout
 # --------------------------------------------------
+
 layout:
-  links:
-    "arch/x86_64/airootfs.sfs": "../../live/filesystem.squashfs"
+  links: {}
