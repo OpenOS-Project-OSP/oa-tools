@@ -14,11 +14,11 @@ import (
 )
 
 func generateInstallPlan(ans *KrillAnswers, disk string, d *distro.Distro) {
-	fmt.Println("\n\033[1;34m[krill]\033[0m Compiling JSON flight plan for the C ..")
+	fmt.Println("[krill] Compiling flight plan...")
 
 	squashPath := getSquashfsPath()
 	if squashPath == "" {
-		fmt.Printf("\033[1;31m[ERROR]\033[0m Could not locate pristine filesystem.squashfs!\n")
+		fmt.Printf("[ERROR] Could not locate pristine filesystem.squashfs!\n")
 		return
 	}
 
@@ -32,21 +32,39 @@ func generateInstallPlan(ans *KrillAnswers, disk string, d *distro.Distro) {
 	}
 
 	// 2. PREPARAZIONE DISCO E FILESYSTEM
-	plan.Plan = append(plan.Plan, Action{Command: "oa_install_partition", RunCommand: disk})
+	plan.Plan = append(plan.Plan, Action{
+		Command:    "oa_install_partition",
+		Info:       "Partitioning target disk",
+		RunCommand: disk,
+	})
 
 	// FIX PER FEDORA 43: Formattazione EXT4 con flag di compatibilità per GRUB
 	if d.FamilyID == "fedora" || d.FamilyID == "rhel" {
 		plan.Plan = append(plan.Plan, Action{
 			Command:    "oa_sys_shell",
+			Info:       "Formatting partitions (legacy compatibility mode)",
 			RunCommand: fmt.Sprintf("mkfs.fat -F32 %s2 && mkfs.ext4 -O ^metadata_csum_seed,^orphan_file %s3", disk, disk),
 		})
 	} else {
-		plan.Plan = append(plan.Plan, Action{Command: "oa_install_format", RunCommand: disk})
+		plan.Plan = append(plan.Plan, Action{
+			Command:    "oa_install_format",
+			Info:       "Formatting target partitions",
+			RunCommand: disk,
+		})
 	}
 
 	plan.Plan = append(plan.Plan,
-		Action{Command: "oa_install_unpack", RunCommand: disk, Args: []string{squashPath}},
-		Action{Command: "oa_install_prepare", RunCommand: disk},
+		Action{
+			Command:    "oa_install_unpack",
+			Info:       "Unpacking system image to disk",
+			RunCommand: disk,
+			Args:       []string{squashPath},
+		},
+		Action{
+			Command:    "oa_install_prepare",
+			Info:       "Preparing target mountpoints",
+			RunCommand: disk,
+		},
 	)
 
 	// 3. LOGICA DISTRO-SPECIFICA (The Mind)
@@ -63,7 +81,6 @@ func generateInstallPlan(ans *KrillAnswers, disk string, d *distro.Distro) {
 		}
 	case "fedora", "rhel", "centos", "rocky", "almalinux":
 		shellInitrdCmd = "dracut --force --regenerate-all"
-		// FIX PER FEDORA: Disabilitazione BLS e installazione fisica GRUB
 		if isUEFI() {
 			shellGrubCmd = "echo 'GRUB_ENABLE_BLSCFG=false' >> /etc/default/grub && " +
 				"grub2-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=fedora --recheck && " +
@@ -85,37 +102,55 @@ func generateInstallPlan(ans *KrillAnswers, disk string, d *distro.Distro) {
 
 	// 4. ESECUZIONE AZIONI UNIVERSALI E CHROOT
 	plan.Plan = append(plan.Plan,
-		Action{Command: "oa_install_fstab", RunCommand: disk},
+		Action{
+			Command:    "oa_install_fstab",
+			Info:       "Generating fstab configuration",
+			RunCommand: disk,
+		},
 		Action{
 			Command:    "oa_sys_shell",
+			Info:       "Setting hostname and machine-id",
 			RunCommand: fmt.Sprintf("echo %s > /etc/hostname && systemd-machine-id-setup", ans.Hostname),
 			Chroot:     true,
 		},
 		Action{
 			Command:    "oa_sys_shell",
+			Info:       "Regenerating Initramfs for target system",
 			RunCommand: shellInitrdCmd,
 			Chroot:     true,
 		},
 		Action{
 			Command:    "oa_sys_shell",
+			Info:       "Installing and configuring GRUB",
 			RunCommand: shellGrubCmd,
 			Chroot:     true,
 		},
-		Action{Command: "oa_install_users"},
+		Action{
+			Command: "oa_install_users",
+			Info:    "Creating system users",
+		},
 	)
 
-	// 5. PULIZIA SELETTIVA E SYNC (FIX PER HANG SU FEDORA)
+	// 5. PULIZIA SELETTIVA E SYNC
 	if d.FamilyID == "debian" {
 		plan.Plan = append(plan.Plan, Action{
 			Command:    "oa_sys_shell",
+			Info:       "Removing installer-specific artifacts",
 			RunCommand: "rm -rf /var/log/installer /var/lib/live/config /etc/sudoers.d/live-user 2>/dev/null",
 			Chroot:     true,
 		})
 	}
 
 	plan.Plan = append(plan.Plan,
-		Action{Command: "oa_sys_shell", RunCommand: "sync"},
-		Action{Command: "oa_install_cleanup"},
+		Action{
+			Command:    "oa_sys_shell",
+			Info:       "Syncing filesystems",
+			RunCommand: "sync",
+		},
+		Action{
+			Command: "oa_install_cleanup",
+			Info:    "Finalizing installation and unmounting",
+		},
 	)
 
 	// 6. Configurazione Utente Primario
@@ -135,6 +170,6 @@ func generateInstallPlan(ans *KrillAnswers, disk string, d *distro.Distro) {
 	outPath := "/tmp/oa-plan.json"
 	os.WriteFile(outPath, jsonData, 0644)
 
-	fmt.Printf("\033[1;32m[SUCCESS]\033[0m Flight plan ready at %s\n", outPath)
+	fmt.Printf("[SUCCESS] Flight plan ready at %s\n", outPath)
 	ExecutePlan(plan)
 }

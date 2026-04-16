@@ -39,7 +39,7 @@ int execute_verb(cJSON *root, cJSON *task) {
     
 if (cJSON_IsString(info) && info->valuestring != NULL) {
         // Se coa ha inviato una descrizione "umana", usala
-        printf("[oa][%s\n", info->valuestring);
+        printf("[oa] %s\n", info->valuestring);
     }
 
     LOG_INFO(">>> dispatching to: %s", cmd_name);
