@@ -2,6 +2,8 @@
 
 stages:
   - test
+  - build
+  - publish
 
 test:
   stage: test
@@ -19,3 +21,32 @@ test:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "main"'
+
+# ── Build coa binary ──────────────────────────────────────────────────────────
+build:coa:
+  stage: build
+  image: golang:1.24
+  script:
+    - cd coa && go build -o ../dist/coa ./...
+  artifacts:
+    paths: [dist/]
+    expire_in: 7 days
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v/'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# ── Publish to GitLab Generic Package Registry on tag ────────────────────────
+publish:
+  stage: publish
+  image: curlimages/curl:latest
+  needs: [build:coa]
+  script:
+    - |
+      VERSION="${CI_COMMIT_TAG:-${CI_COMMIT_SHORT_SHA}}"
+      curl --fail-with-body \
+        --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        --upload-file dist/coa \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/oa-tools/${VERSION}/coa-linux-amd64"
+      echo "Published coa-linux-amd64 @ ${VERSION}"
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v/'
