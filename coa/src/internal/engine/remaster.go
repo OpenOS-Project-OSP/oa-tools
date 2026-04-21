@@ -123,7 +123,7 @@ func bridgeConfigs(d *distro.Distro, workPath string) error {
 		presetName = fmt.Sprintf("live-%s.conf", d.DistroID)
 	}
 	src := fmt.Sprintf("/tmp/coa/configs/mkinitcpio/%s", presetName)
-	dst := filepath.Join(workPath, "liveroot", "etc", "coa_mkinitcpio.conf")
+	dst := filepath.Join(workPath, "liveroot", "etc", "coa-mkinitcpio.conf")
 
 	fmt.Printf("\033[1;34m[coa]\033[0m Creating liveroot /etc/mkinitcpio.conf with %s...\n", presetName)
 
