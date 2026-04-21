@@ -3,6 +3,7 @@ package engine
 import (
 	"coa/src/internal/distro"
 	"coa/src/internal/pilot"
+	"fmt"
 	"path/filepath"
 )
 
@@ -27,9 +28,6 @@ func generateRemasterPlan(d *distro.Distro, mode string, workPath string) Flight
 	// 1.2 Rigenerazione dell'Initramfs
 	appendTaskActions(&plan, profile, "initrd")
 
-	// (Eventuali altri task futuri del chroot, es: "network", "drivers")
-	// appendTaskActions(&plan, profile, "network")
-
 	// =================================================================
 	// FASE 2: LIVE STRUCT (Operazioni Esterne - Host)
 	// =================================================================
@@ -47,6 +45,14 @@ func generateRemasterPlan(d *distro.Distro, mode string, workPath string) Flight
 	blActions, err := LiveBootloader(workPath)
 	if err == nil {
 		plan.Plan = append(plan.Plan, blActions...)
+	}
+
+	// ---> NOVITÀ: Generazione dei Menu di Avvio! <---
+	fmt.Println("\033[1;36m[coa]\033[0m Scrittura dei menu GRUB e ISOLINUX...")
+	err = GenerateBootMenus(workPath, d, profile, "OA_LIVE")
+	if err != nil {
+
+		fmt.Printf("\033[1;33m[WARNING]\033[0m Impossibile scrivere i menu di boot: %v\n", err)
 	}
 
 	// =================================================================

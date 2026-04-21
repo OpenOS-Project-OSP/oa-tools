@@ -21,7 +21,7 @@ func GenerateIso(workDir string, isoName string, volId string) ([]Action, error)
 
 	// 2. Recuperiamo il file MBR ibrido dai bootloader scaricati.
 	// Questo file è vitale per far avviare la chiavetta USB sui vecchi BIOS.
-	mbrPath := filepath.Join(BootloaderRoot, "isolinux/isohdpfx.bin")
+	mbrPath := filepath.Join(BootloaderRoot, "ISOLINUX/isohdpfx.bin")
 
 	// 3. Costruzione del "Mega Comando" xorriso
 	// -as mkisofs: usa la sintassi standard e compatibile
@@ -32,12 +32,14 @@ func GenerateIso(workDir string, isoName string, volId string) ([]Action, error)
 	cmd := fmt.Sprintf(
 		"xorriso -as mkisofs -r -J -joliet-long -l -cache-inodes "+
 			"-V '%s' "+
-			"-isohybrid-mbr %s -partition_offset 16 "+
+			"-isohybrid-mbr %s "+
+			"-partition_offset 16 "+
 			"-A '%s' "+
 			"-b isolinux/isolinux.bin -c isolinux/boot.cat "+
 			"-no-emul-boot -boot-load-size 4 -boot-info-table "+
 			"-eltorito-alt-boot "+
-			"-e boot/grub/efi.img -no-emul-boot -isohybrid-gpt-basdat "+
+			"-e EFI/BOOT/efi.img "+ // <--- Percorso aggiornato
+			"-no-emul-boot -isohybrid-gpt-basdat "+
 			"-o %s %s",
 		volId, mbrPath, volId, isoDest, isodir,
 	)

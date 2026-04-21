@@ -96,11 +96,14 @@ int main(int argc, char *argv[]) {
 
     // In main.c, all'inizio del main()
     if (argc >= 2 && strcmp(argv[1], "cleanup") == 0) {
-        printf("[OA] Esecuzione pulizia d'emergenza (Unmount Recursive)...\n");
-        // Smonta in modo ricorsivo e pigro la liveroot e l'overlay
-        system("umount -R -l /home/eggs/liveroot 2>/dev/null");
-        system("umount -R -l /home/eggs/.overlay 2>/dev/null");
-        printf("[OA] Ambiente smontato e messo in sicurezza.\n");
+        LOG_INFO("Smontaggio filesystem virtuali (Recursive Lazy Unmount)...");
+        
+        // 1. Rendiamo i mount privati per evitare la propagazione all'host
+        system("mount --make-rprivate /home/eggs/liveroot 2>/dev/null");
+        
+        // 2. Ora possiamo smontare in sicurezza
+        int res1 = system("umount -R -l /home/eggs/liveroot 2>/dev/null");
+        int res2 = system("umount -R -l /home/eggs/.overlay 2>/dev/null");        
         return 0;
     }
 
