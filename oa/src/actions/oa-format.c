@@ -24,22 +24,24 @@ int oa_format(OA_Context *ctx) {
         const char *fs = fs_obj->valuestring;
         const char *label = cJSON_IsString(lbl_obj) ? lbl_obj->valuestring : "";
 
-        char cmd[256];
+        char cmd[512];
         if (strcmp(fs, "vfat") == 0) {
-            snprintf(cmd, sizeof(cmd), "mkfs.vfat -F32 -n '%s' %s >/dev/null", label, device);
+            snprintf(cmd, sizeof(cmd), "mkfs.vfat -F32 -n '%s' %s", label, device);
         } else if (strcmp(fs, "swap") == 0) {
-            snprintf(cmd, sizeof(cmd), "mkswap -L '%s' %s >/dev/null", label, device);
+            snprintf(cmd, sizeof(cmd), "mkswap -L '%s' %s", label, device);
         } else {
-            // Default ext4/xfs/btrfs (assumendo che mkfs.FS supporti -L)
-            snprintf(cmd, sizeof(cmd), "mkfs.%s -F -L '%s' %s >/dev/null", fs, label, device);
+            // L'opzione -F forza la formattazione senza chiedere conferme (ext4/btrfs)
+            snprintf(cmd, sizeof(cmd), "mkfs.%s -F -L '%s' %s", fs, label, device);
         }
 
-        LOG_INFO("Formatting %s as %s (Label: %s)", device, fs, label);
+        LOG_INFO("Esecuzione: %s", cmd);
         
-        // Esecuzione reale (puoi commentare il system() finché testiamo la sintassi)
+        // SCOMMENTA QUESTA RIGA PER RENDERLO DISTRUTTIVO!
         // int res = system(cmd);
-        // if (res != 0) return 1;
+        // if (res != 0) {
+        //     LOG_ERR("Formattazione fallita su %s", device);
+        //     return 1;
+        // }
     }
-
     return 0;
 }

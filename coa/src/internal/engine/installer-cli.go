@@ -24,7 +24,6 @@ func SelectTargetDisk() (*BlockDevice, error) {
 	fmt.Println("\nDischi disponibili per l'installazione:")
 	fmt.Println(strings.Repeat("-", 60))
 	for i, disk := range disks {
-		// Stampa un menu pulito: [1] /dev/sda - Samsung SSD (500 GB)
 		fmt.Printf("[%d] /dev/%s \t- %s (%s)\n", i+1, disk.Name, disk.Model, FormatSize(disk.Size))
 	}
 	fmt.Println(strings.Repeat("-", 60))
@@ -52,15 +51,10 @@ func SelectTargetDisk() (*BlockDevice, error) {
 		confirm = strings.TrimSpace(strings.ToLower(confirm))
 
 		if confirm == "si" || confirm == "sì" {
-			return &selectedDisk, nil
+			return &selectedDisk, nil // <-- Esce dal loop e restituisce il disco
 		} else {
 			fmt.Println("\nOperazione annullata. Scegli un altro disco o premi Ctrl+C per uscire.")
+			// Il loop ricomincia e chiede di nuovo
 		}
 	}
-}
-
-// In engine/coa_hardware.go
-func GetAvailableDisks() ([]DiskInfo, error) {
-	// lsblk -nbo NAME,MODEL,SIZE,TYPE,TRAN -J
-	// -J ci restituisce un JSON perfetto da mappare su una struct
 }

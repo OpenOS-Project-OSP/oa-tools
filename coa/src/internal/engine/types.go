@@ -27,6 +27,11 @@ type Action struct {
 	ExcludeList     string   `json:"exclude_list,omitempty"`
 	BootParams      string   `json:"boot_params,omitempty"`
 	Args            []string `json:"args,omitempty"`
+	// campi per l'installazione
+	Device     string              `json:"device,omitempty"`
+	Label      string              `json:"label,omitempty"`
+	Partitions []map[string]string `json:"partitions,omitempty"`
+	Actions    []map[string]string `json:"actions,omitempty"` // oa_format cerca "actions"
 
 	// ---> I CAMPI CHE MANCAVANO QUI <---
 	// Permettono a questa specifica azione di trasportare la lista utenti e la modalità
@@ -36,13 +41,10 @@ type Action struct {
 
 // FlightPlan è l'oggetto JSON principale inviato al motore oa
 type FlightPlan struct {
-	PathLiveFs      string `json:"pathLiveFs"`
-	Mode            string `json:"mode"`
-	Family          string `json:"family"`
-	InitrdCmd       string `json:"initrd_cmd"`
-	BootloadersPath string `json:"bootloaders_path"`
-	// Ho lasciato Users qui perché il tuo C supporta la lettura dalla root,
-	// ma l'ideale sarà passarlo dentro l'Action. Male non fa!
-	Users []UserDef `json:"users,omitempty"`
-	Plan  []Action  `json:"plan"`
+	PathLiveFs      string   `json:"pathLiveFs"`
+	Mode            string   `json:"mode"`
+	Family          string   `json:"family"`
+	InitrdCmd       string   `json:"initrd_cmd"`
+	BootloadersPath string   `json:"bootloaders_path"`
+	Plan            []Action `json:"plan"`
 }
