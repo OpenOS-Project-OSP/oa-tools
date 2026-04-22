@@ -17,23 +17,19 @@ func GenerateBootMenus(workPath string, d *distro.Distro, profile *pilot.BrainPr
 	os.MkdirAll(filepath.Dir(isolinuxCfgPath), 0755)
 
 	// =================================================================
-	// 1. LOGICA DI ESTRAZIONE PARAMETRI (Da pilot/boot.go)
+	// 1. LOGICA DI ESTRAZIONE PARAMETRI (Ora pulitissima grazie ad Areas)
 	// =================================================================
 
 	// Default: Debian Style
-	bootParams := "boot=live components quiet splash"
+	// bootParams := "boot=live components quiet splash"
+	bootParams := "boot=live components "
 
-	// Override 1: ArchLinux
-	if d.FamilyID == "archlinux" {
+	// La regola è semplice: lo YAML vince su tutto.
+	// Se non c'è nello YAML, applichiamo i fallback per famiglia.
+	if profile.Areas.Boot.Params != "" {
+		bootParams = profile.Areas.Boot.Params
+	} else if d.FamilyID == "archlinux" || d.FamilyID == "arch" {
 		bootParams = "archisobasedir=arch archisolabel=" + volId + " rw"
-	}
-
-	// Override 2: YAML Profile (Task "boot")
-	for _, t := range profile.Tasks {
-		if t.Name == "boot" && len(t.Commands) > 0 {
-			bootParams = t.Commands[0]
-			break // Trovato, usciamo dal ciclo
-		}
 	}
 
 	// =================================================================
@@ -41,6 +37,17 @@ func GenerateBootMenus(workPath string, d *distro.Distro, profile *pilot.BrainPr
 	// =================================================================
 	grubContent := fmt.Sprintf(`set timeout=5
 set default=0
+
+# Caricamento moduli essenziali per lettura filesystem e partizioni
+insmod all_video
+insmod part_gpt
+insmod part_msdos
+insmod fat
+insmod iso9660
+insmod ext2
+insmod search_fs_label
+insmod search_fs_uuid
+insmod loopback
 
 # Ricerca della partizione tramite Label per evitare il rescue prompt
 search --no-floppy --set=root --label %s

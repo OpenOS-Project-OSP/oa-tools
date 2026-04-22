@@ -9,10 +9,6 @@ type Task struct {
 	Description string            `json:"Description"`
 }
 
-type BrainProfile struct {
-	Tasks []Task
-}
-
 // Strutture di configurazione (mappano i file YAML piatti)
 
 type IdentityConfig struct {
@@ -31,4 +27,16 @@ type BootConfig struct {
 
 type LayoutConfig struct {
 	Links map[string]string `yaml:"links"`
+}
+
+type Areas struct {
+	Identity IdentityConfig
+	Initrd   InitrdConfig
+	Boot     BootConfig
+	Layout   LayoutConfig
+}
+
+type BrainProfile struct {
+	Tasks []Task
+	Areas Areas
 }

@@ -4,7 +4,7 @@ import (
 	"coa/src/internal/distro"
 	"coa/src/internal/pilot"
 	"fmt"
-	"path/filepath"
+	"os"
 )
 
 func generateRemasterPlan(d *distro.Distro, mode string, workPath string) FlightPlan {
@@ -21,18 +21,31 @@ func generateRemasterPlan(d *distro.Distro, mode string, workPath string) Flight
 	// =================================================================
 	profile := pilot.GetBrainProfile(d, mode, workPath)
 
-	// Chiamiamo esplicitamente i task nell'ordine corretto, senza hardcoding!
-	// 1.1 Iniezione identità (Pulizia, utenti, skel)
-	appendTaskActions(&plan, profile, "identity")
+	// =================================================================
+	// IDENTITÀ E UTENTI (Prima di chiudere lo squashfs)
+	// =================================================================
+	identityActions := GenerateIdentityActions(mode, profile)
+	plan.Plan = append(plan.Plan, identityActions...)
 
-	// 1.2 Rigenerazione dell'Initramfs
-	appendTaskActions(&plan, profile, "initrd")
+	// ---> Generazione Initrd dinamica <---
+	initrdActions, err := GenerateInitrd(workPath, profile)
+	if err != nil {
+		fmt.Printf("\033[1;31m[coa-FATAL]\033[0m Errore durante la preparazione dell'Initrd: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Aggiungiamo l'azione di rigenerazione initrd al piano
+	plan.Plan = append(plan.Plan, initrdActions...)
 
 	// =================================================================
 	// FASE 2: LIVE STRUCT (Operazioni Esterne - Host)
 	// =================================================================
-	kernelSrc := filepath.Join(workPath, "liveroot", "vmlinuz")
-	initrdSrc := filepath.Join(workPath, "liveroot", "initrd.img")
+	// Cerchiamo dinamicamente il Kernel in base alla distro!
+	kernelSrc, initrdSrc, err := FindKernelAndInitrd(workPath, d.FamilyID)
+	if err != nil {
+		fmt.Printf("\033[1;31m[coa-FATAL]\033[0m %v\n", err)
+		os.Exit(1)
+	}
 
 	lsActions, err := generateLiveStruct(workPath, kernelSrc, initrdSrc)
 	if err == nil {
@@ -56,6 +69,12 @@ func generateRemasterPlan(d *distro.Distro, mode string, workPath string) Flight
 	}
 
 	// =================================================================
+	// LAYOUT E SYMLINK DELLA ISO (Es. la cartella arch/x86_64/)
+	// =================================================================
+	layoutActions := GenerateLayoutActions(workPath, profile)
+	plan.Plan = append(plan.Plan, layoutActions...)
+
+	// =================================================================
 	// FASE 4: SQUASHFS
 	// =================================================================
 	excludeFilePath := generateExcludeList(mode)
@@ -77,7 +96,7 @@ func generateRemasterPlan(d *distro.Distro, mode string, workPath string) Flight
 	// FASE 6: CLEANUP
 	// =================================================================
 	plan.Plan = append(plan.Plan, Action{
-		Command: "oa_remaster_cleanup",
+		Command: "oa_umount",
 		Info:    "Smontaggio filesystem virtuali e pulizia finale",
 	})
 

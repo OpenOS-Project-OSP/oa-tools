@@ -1,39 +1,48 @@
 package engine
 
-// BootloaderRoot definisce dove vengono estratti i bootloader. [cite: 88]
+// BootloaderRoot definisce dove vengono estratti i bootloader.
 const BootloaderRoot = "/tmp/coa/bootloaders"
 
-// Action rappresenta un singolo blocco "command" nell'array "plan" [cite: 89]
+// Struttura che mappa esattamente i campi che il C cercherà nell'array "users"
+type UserDef struct {
+	Login    string   `json:"login"`
+	Password string   `json:"password"`
+	Home     string   `json:"home"`
+	Shell    string   `json:"shell"`
+	Gecos    string   `json:"gecos"`
+	Uid      int      `json:"uid"`
+	Gid      int      `json:"gid"`
+	Groups   []string `json:"groups"` // <-- L'array dei gruppi!
+}
+
+// Action rappresenta un singolo blocco "command" nell'array "plan"
 type Action struct {
 	Command         string   `json:"command"`
-	Info            string   `json:"info,omitempty"` // <-- Aggiunto per l'output a video
+	Info            string   `json:"info,omitempty"`
 	VolID           string   `json:"volid,omitempty"`
 	OutputISO       string   `json:"output_iso,omitempty"`
 	CryptedPassword string   `json:"crypted_password,omitempty"`
 	RunCommand      string   `json:"run_command,omitempty"`
-	Chroot          bool     `json:"chroot,omitempty"` // Supporto per esecuzione in liveroot
+	Chroot          bool     `json:"chroot,omitempty"`
 	ExcludeList     string   `json:"exclude_list,omitempty"`
-	BootParams      string   `json:"boot_params,omitempty"` // Parametri dinamici per il bootloader [cite: 89]
+	BootParams      string   `json:"boot_params,omitempty"`
 	Args            []string `json:"args,omitempty"`
+
+	// ---> I CAMPI CHE MANCAVANO QUI <---
+	// Permettono a questa specifica azione di trasportare la lista utenti e la modalità
+	Mode  string    `json:"mode,omitempty"`
+	Users []UserDef `json:"users,omitempty"`
 }
 
-// UserConfig definisce la struttura per la creazione nativa dell'utente live [cite: 89]
-type UserConfig struct {
-	Login    string   `json:"login"`
-	Password string   `json:"password"`
-	Gecos    string   `json:"gecos"`
-	Home     string   `json:"home"`
-	Shell    string   `json:"shell"`
-	Groups   []string `json:"groups"`
-}
-
-// FlightPlan è l'oggetto JSON principale inviato al motore oa [cite: 90]
+// FlightPlan è l'oggetto JSON principale inviato al motore oa
 type FlightPlan struct {
-	PathLiveFs      string       `json:"pathLiveFs"`
-	Mode            string       `json:"mode"`
-	Family          string       `json:"family"`
-	InitrdCmd       string       `json:"initrd_cmd"`
-	BootloadersPath string       `json:"bootloaders_path"`
-	Users           []UserConfig `json:"users"`
-	Plan            []Action     `json:"plan"`
+	PathLiveFs      string `json:"pathLiveFs"`
+	Mode            string `json:"mode"`
+	Family          string `json:"family"`
+	InitrdCmd       string `json:"initrd_cmd"`
+	BootloadersPath string `json:"bootloaders_path"`
+	// Ho lasciato Users qui perché il tuo C supporta la lettura dalla root,
+	// ma l'ideale sarà passarlo dentro l'Action. Male non fa!
+	Users []UserDef `json:"users,omitempty"`
+	Plan  []Action  `json:"plan"`
 }
