@@ -38,19 +38,51 @@ func SetupAndLaunch() error {
 	unpackConf := fmt.Sprintf("unpack:\n  - source: \"%s\"\n    sourcefs: \"squashfs\"\n    destination: \"\"\n", FindSquashfsPath())
 	os.WriteFile(modulesDir+"/unpackfs.conf", []byte(unpackConf), 0644)
 
-	// 1. Modulo per il Finalize (da eseguire alla fine)
-	// Lancia oa puntando al JSON che ora ha il path fisso /tmp/coa-calamares-root
-	// shellprocess_oa_finalize.conf
+	/**
+	* SCRIPT oa.sh
+	 */
+	// 1. Assicuriamoci che la directory base esista
+	os.MkdirAll("/tmp/coa", 0755)
+
+	// 2. Creiamo un vero script Bash fisico, blindato e con log
+	wrapperScript := `#!/bin/bash
+# Pulizia preventiva
+mkdir -p /tmp/coa
+rm -rf /tmp/coa/calamares-root
+
+# Troviamo la vera cartella di mount di Calamares
+REAL_ROOT=$(ls -d /tmp/calamares-root-* 2>/dev/null | head -n 1)
+
+# Logghiamo cosa stiamo vedendo (VITALE per il debug!)
+echo "=== AVVIO WRAPPER OA ===" > /var/log/oa-debug.log
+echo "Root reale trovata: '$REAL_ROOT'" >> /var/log/oa-debug.log
+
+if [ -z "$REAL_ROOT" ]; then
+    echo "ERRORE CRITICO: Cartella calamares-root non trovata in /tmp!" >> /var/log/oa-debug.log
+    exit 1
+fi
+
+# Creiamo il link simbolico assoluto e logghiamo il risultato
+ln -sf "$REAL_ROOT" /tmp/coa/calamares-root
+ls -la /tmp/coa/calamares-root >> /var/log/oa-debug.log
+
+# Lanciamo il motore C
+echo "Lancio oa..." >> /var/log/oa-debug.log
+oa /tmp/coa/finalize-plan.json
+`
+
+	// Scriviamo lo script e lo rendiamo eseguibile
+	os.WriteFile("/tmp/coa/run_oa.sh", []byte(wrapperScript), 0755)
+
+	// 3. Modulo Calamares ridotto all'osso: esegue solo lo script
 	finalizeConf := `dontChroot: true
 timeout: 3600
 script:
-  - "mkdir -p /tmp/coa"
-  - "rm -rf /tmp/coa/calamares-root"
-  - "ln -sf $(ls -d /tmp/calamares-root-* | head -n 1) /tmp/coa/calamares-root"
-  - "oa /tmp/coa/finalize-plan.json"
+  - "/tmp/coa/run_oa.sh"
 `
 	os.WriteFile(modulesDir+"/shellprocess_oa_finalize.conf", []byte(finalizeConf), 0644)
 
+	// LOG
 	logFile, err := os.Create("/var/log/calamares.log")
 	if err != nil {
 		return fmt.Errorf("impossibile creare il file di log: %v", err)
