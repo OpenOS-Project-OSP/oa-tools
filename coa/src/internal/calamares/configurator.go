@@ -1,0 +1,92 @@
+package calamares
+
+import (
+	"coa/src/internal/assets"
+	"coa/src/internal/engine"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+)
+
+const (
+	coaCalamaresDir = "/etc/calamares"
+	modulesDir      = "/etc/calamares/modules"
+)
+
+func SetupAndLaunch() error {
+	fmt.Println("\033[1;36m[coa-calamares]\033[0m Generazione ambiente universale...")
+
+	// 1. Tabula rasa: pulizia della run precedente
+	os.RemoveAll(coaCalamaresDir)
+
+	// 2. Estrazione magica degli asset base (settings.conf, branding, ecc.) dal binario Go
+	err := assets.ExtractCalamares(coaCalamaresDir)
+	if err != nil {
+		return fmt.Errorf("errore estrazione asset Calamares: %v", err)
+	}
+
+	// Assicuriamoci che la cartella modules esista fisicamente
+	os.MkdirAll(modulesDir, 0755)
+
+	// 3. Generazione del piano per il motore C (oa)
+	engine.GenerateFinalizePlan()
+
+	// 4. CREAZIONE FILE DINAMICI
+
+	// A. unpackfs.conf (trova dinamicamente lo squashfs)
+	unpackConf := fmt.Sprintf("unpack:\n  - source: \"%s\"\n    sourcefs: \"squashfs\"\n    destination: \"\"\n", FindSquashfsPath())
+	os.WriteFile(modulesDir+"/unpackfs.conf", []byte(unpackConf), 0644)
+
+	// 1. Modulo per il Finalize (da eseguire alla fine)
+	// Lancia oa puntando al JSON che ora ha il path fisso /tmp/coa-calamares-root
+	finalizeConf := `dontChroot: true
+timeout: 3600
+script:
+  - "mkdir -p /tmp/coa"
+  - "rm -rf /tmp/coa/calamares-root"
+  - "ln -sf @@ROOT@@ /tmp/coa/calamares-root"
+  - "oa /tmp/coa/finalize-plan.json"
+`
+	os.WriteFile(modulesDir+"/shellprocess_oa_finalize.conf", []byte(finalizeConf), 0644)
+
+	logFile, err := os.Create("/var/log/calamares.log")
+	if err != nil {
+		return fmt.Errorf("impossibile creare il file di log: %v", err)
+	}
+	defer logFile.Close()
+
+	// Lanciamo Calamares in modalità super-debug (-d)
+	cmd := exec.Command("calamares", "-d", coaCalamaresDir, "-D", "8")
+
+	// Redirigiamo tutto: terminale + file di log
+	multiWriter := io.MultiWriter(os.Stdout, logFile)
+	cmd.Stdout = multiWriter
+	cmd.Stderr = multiWriter
+
+	return cmd.Run()
+}
+
+// FindSquashfsPath cerca il file compresso del sistema (squashfs)
+// nei percorsi standard usati dalle Live USB (Debian, Arch, Fedora, penguins-eggs).
+func FindSquashfsPath() string {
+	possiblePaths := []string{
+		"/run/live/medium/live/filesystem.squashfs",       // Debian Live moderna (e penguins-eggs su Debian)
+		"/lib/live/mount/medium/live/filesystem.squashfs", // Debian Live vecchia
+		"/run/archiso/bootmnt/arch/x86_64/airootfs.sfs",   // Arch Linux ISO standard
+		"/run/initramfs/live/LiveOS/squashfs.img",         // Fedora Live standard
+		"/live/filesystem.squashfs",                       // Fallback generico
+	}
+
+	for _, p := range possiblePaths {
+		// Se il file esiste, restituiamo questo percorso
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+
+	// Fallback estremo: se non trova nulla, restituisce un percorso
+	// palesemente finto così Calamares fallisce in modo chiaro
+	// invece di esplodere silenziosamente.
+	return "/ERRORE_SQUASHFS_NON_TROVATO/filesystem.squashfs"
+}
