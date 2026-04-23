@@ -40,12 +40,13 @@ func SetupAndLaunch() error {
 
 	// 1. Modulo per il Finalize (da eseguire alla fine)
 	// Lancia oa puntando al JSON che ora ha il path fisso /tmp/coa-calamares-root
+	// shellprocess_oa_finalize.conf
 	finalizeConf := `dontChroot: true
 timeout: 3600
 script:
   - "mkdir -p /tmp/coa"
   - "rm -rf /tmp/coa/calamares-root"
-  - "ln -sf @@ROOT@@ /tmp/coa/calamares-root"
+  - "ln -sf $(ls -d /tmp/calamares-root-* | head -n 1) /tmp/coa/calamares-root"
   - "oa /tmp/coa/finalize-plan.json"
 `
 	os.WriteFile(modulesDir+"/shellprocess_oa_finalize.conf", []byte(finalizeConf), 0644)
