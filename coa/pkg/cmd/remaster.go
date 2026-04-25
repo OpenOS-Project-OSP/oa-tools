@@ -78,6 +78,9 @@ and generate a precise execution plan for the OA engine.`,
 		LogCoala("Recupero bootloaders (penguins-bootloaders)...")
 		utils.EnsureBootloaders("/tmp/coa/bootloaders")
 
+		LogCoala("Generazione lista di esclusione (%s mode)...", produceMode)
+		engine.GenerateExcludeList(produceMode)
+
 		// 4. DECOLLO: Eseguiamo il motore C (oa) passandogli il JSON appena generato
 		LogCoala("Passaggio dei comandi al motore OA...")
 		oaCmd := exec.Command("oa", "oa-plan.json")

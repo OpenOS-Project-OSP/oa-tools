@@ -11,7 +11,7 @@ import (
 func DetectAndLoad() (*Profile, error) {
 	// 1. Qui potresti usare pkg/distro per capire se caricare debian.yaml o arch.yaml
 	// Per ora forziamo debian.yaml come nel tuo esempio
-	brainPath := "/etc/coa/brain.d/debian.yaml"
+	brainPath := "coa/brain.d/debian.yaml"
 
 	// Se siamo in dev, cerchiamo in locale
 	if _, err := os.Stat("brain.d/debian.yaml"); err == nil {
