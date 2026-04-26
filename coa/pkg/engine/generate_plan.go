@@ -14,7 +14,6 @@ import (
 func GeneratePlan(yamlSteps []pilot.YamlStep, familyID string, isRemaster bool, workPath string, finalIsoPath string, stopAfter string) (string, error) {
 	var plan OAPlan
 
-	// Definiamo l'utente classico "live/evolution"
 	defaultUser := pilot.User{
 		Login:    "live",
 		Password: "$6$oa-tools$uTKAYeAVn.Y.Dy2To6HXsHt1Gt4HpMghmOV93a46jFY7hkAQ3tk7eRTKjcvSYDf5sOf3qnKzyyPYXurKp9ST3.",
@@ -29,22 +28,22 @@ func GeneratePlan(yamlSteps []pilot.YamlStep, familyID string, isRemaster bool, 
 
 	for _, step := range yamlSteps {
 
-		// ==========================================================
-		// LOGICA BREAKPOINT: Se la spia è accesa, ignoriamo la
-		// traduzione di questo step nel JSON (tranne il cleanup!)
-		// ==========================================================
 		if hitBreakpoint && step.Name != "coa-cleanup" {
 			continue
 		}
 
-		// Sostituzione dinamica del percorso ISO nei comandi che lo richiedono
-		// Questo permette di usare ${ISO_OUTPUT} in qualsiasi comando dello YAML
+		// --- IL PONTE: Sostituzione dinamica del percorso ISO ---
 		currentRunCommand := step.RunCommand
 		if strings.Contains(currentRunCommand, "${ISO_OUTPUT}") {
 			currentRunCommand = strings.ReplaceAll(currentRunCommand, "${ISO_OUTPUT}", finalIsoPath)
 		}
 
-		// Traduzione da YAML a JSON
+		// --- INFO DINAMICA: Mostriamo il nome reale nel log ---
+		currentDescription := step.Description
+		if strings.Contains(currentDescription, "${ISO_NAME}") {
+			currentDescription = strings.ReplaceAll(currentDescription, "${ISO_NAME}", filepath.Base(finalIsoPath))
+		}
+
 		switch step.Command {
 
 		case "oa_mount_logic":
@@ -74,8 +73,8 @@ func GeneratePlan(yamlSteps []pilot.YamlStep, familyID string, isRemaster bool, 
 		default:
 			plan.Plan = append(plan.Plan, OATask{
 				Command:    step.Command,
-				Info:       step.Description,
-				RunCommand: step.RunCommand,
+				Info:       currentDescription, // Usiamo la descrizione risolta
+				RunCommand: currentRunCommand,  // IMPORTANTE: Usiamo il comando risolto!
 				Chroot:     step.Chroot,
 				PathLiveFs: workPath,
 				Path:       step.Path,
@@ -84,16 +83,12 @@ func GeneratePlan(yamlSteps []pilot.YamlStep, familyID string, isRemaster bool, 
 			})
 		}
 
-		// ==========================================================
-		// CHECK BREAKPOINT: Se questo era lo step target, accendiamo la spia
-		// ==========================================================
 		if stopAfter != "" && step.Name == stopAfter {
 			fmt.Printf("\n\033[1;33m[ENGINE] 🛑 Breakpoint '%s' elaborato. Generazione JSON accorciata.\033[0m\n", step.Name)
 			hitBreakpoint = true
 		}
 	}
 
-	// Scrittura del file JSON finale
 	return savePlan(plan)
 }
 
