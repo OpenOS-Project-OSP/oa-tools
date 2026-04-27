@@ -13,36 +13,49 @@ func GenerateExcludeList(mode string) string {
 
 	// ==========================================================
 	// 1. Filesystem Virtuali e Temporanei
-	// Usiamo l'asterisco (/*) per SVUOTARE la cartella ma
-	// MANTENERE la cartella vuota (necessaria per i mount point al boot)
+	// Usiamo il "Doppio Colpo": /* per i file visibili e /.* per quelli nascosti!
 	// ==========================================================
 	excludes = append(excludes,
 		"dev/*",
 		"proc/*",
 		"sys/*",
 		"run/*",
+		"run/.*", // File nascosti in run
 		"tmp/*",
+		"tmp/.*", // File nascosti in tmp
 		"var/tmp/*",
+		"var/tmp/.*", // <-- Il sicario che eliminerà il GB nascosto!
 		"mnt/*",
 		"media/*",
 		"lost+found",
-		// Aggiunte salvavita da ieri: non comprimere l'overlay di lavoro
 		"home/eggs/.overlay/*",
+		"home/eggs/.overlay/.*", // Sicurezza extra per overlay
 		"home/eggs/isodir/*",
+		"home/eggs/*.iso",
 	)
 
 	// ==========================================================
-	// 2. Esclusioni Standard di Sistema (Da penguins-eggs)
+	// 2. Esclusioni Standard di Sistema
 	// ==========================================================
 	excludes = append(excludes,
 		"boot/efi/EFI",
 		"boot/loader/entries/",
 		"etc/fstab",
 		"etc/mtab",
+		"swapfile",
 		"var/lib/docker/",
 		"var/lib/containers/",
 		"etc/udev/rules.d/70-persistent-cd.rules",
 		"etc/udev/rules.d/70-persistent-net.rules",
+		"etc/NetworkManager/system-connections/*",
+		"etc/ssh/ssh_host_*",
+		"var/lib/NetworkManager/secret_key",
+
+		// Rete di Sicurezza Cache: l'asterisco classico è sufficiente
+		"var/cache/apt/archives/*",
+		"var/cache/apt/*.bin", // I killer da 100 MB di apt
+		"var/cache/pacman/pkg/*",
+		"var/cache/dnf/*",
 	)
 
 	// ==========================================================
@@ -56,8 +69,21 @@ func GenerateExcludeList(mode string) string {
 	// 4. Sicurezza Root / Home (In base al mode)
 	// ==========================================================
 	if mode != "clone" && mode != "crypted" {
-		// Come in TS: root/* e root/.*
-		excludes = append(excludes, "root/*", "root/.*")
+		// Puliamo completamente root e cancelliamo cronologia e chiavi utente
+		excludes = append(excludes,
+			"root/*",
+			"root/.*",
+		)
+	} else {
+		// Anche in modalità clone, è saggio NON portarsi dietro la cronologia di bash
+		// e i file del cestino dell'utente, a meno che non sia strettamente necessario
+		excludes = append(excludes,
+			"root/.bash_history",
+			"root/.zsh_history",
+			"home/*/.bash_history",
+			"home/*/.local/share/Trash/*",
+			"home/*/.cache/*", // Le cache dei browser pesano moltissimo!
+		)
 	}
 
 	// ==========================================================
@@ -73,8 +99,7 @@ func GenerateExcludeList(mode string) string {
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
 			if line != "" && !strings.HasPrefix(line, "#") {
-				// FIX: Come facevi in TS, rimuoviamo lo slash iniziale.
-				// mksquashfs lavora con percorsi relativi alla directory sorgente.
+				// Rimuoviamo lo slash iniziale per rendere il path relativo
 				line = strings.TrimPrefix(line, "/")
 				excludes = append(excludes, line)
 			}

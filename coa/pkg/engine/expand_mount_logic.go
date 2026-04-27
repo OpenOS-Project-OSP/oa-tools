@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -42,19 +43,35 @@ func expandMountLogic(basePath string) []OATask {
 		}
 	}
 
-	// 3. BIND MOUNTS DINAMICI: Proiettiamo il sistema host nel chroot (Read-Only)
-	// Controlliamo cosa esiste davvero sull'host per essere arch-agnostic (RISC-V, x86, etc)
+	// 3. BIND MOUNTS DINAMICI (CON FIX USRMERGE): Proiettiamo il sistema host nel chroot (Read-Only)
+	// Controlliamo cosa esiste davvero sull'host per essere arch-agnostic e gestiamo i symlink!
 	entries := []string{"bin", "sbin", "lib", "lib64", "opt", "root", "srv"}
 	for _, e := range entries {
 		src := "/" + e
-		if _, err := os.Stat(src); err == nil {
-			tasks = append(tasks, OATask{
-				Command:  "oa_bind",
-				Src:      src,
-				Dst:      filepath.Join(liveroot, e),
-				ReadOnly: true,
-				Info:     "Bind mount proiettivo: " + e,
-			})
+		// Usiamo Lstat perché vogliamo sapere se la cartella stessa è un link, senza seguirlo
+		if info, err := os.Lstat(src); err == nil {
+			if info.Mode()&os.ModeSymlink != 0 {
+				// È un symlink (Usrmerge attivo: es. /bin -> usr/bin)
+				// Leggiamo dove punta e lo ricreiamo identico nel chroot
+				target, err := os.Readlink(src)
+				if err == nil {
+					cmd := fmt.Sprintf("ln -sf %s %s", target, filepath.Join(liveroot, e))
+					tasks = append(tasks, OATask{
+						Command:    "oa_shell",
+						Info:       "Replica Usrmerge symlink: " + e,
+						RunCommand: cmd,
+					})
+				}
+			} else {
+				// Cartella reale (non usrmerge), procediamo col bind mount classico
+				tasks = append(tasks, OATask{
+					Command:  "oa_bind",
+					Src:      src,
+					Dst:      filepath.Join(liveroot, e),
+					ReadOnly: true,
+					Info:     "Bind mount proiettivo: " + e,
+				})
+			}
 		}
 	}
 

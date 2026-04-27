@@ -146,17 +146,29 @@ func NewDistro() *Distro {
 	return nil
 }
 
-// GetISOName genera il nome standard: egg-of-<distro>-<arch>-<data>.iso
+// GetISOName genera il nome completo: egg-of-<distro>-<host>-<arch>-<data>.iso
 func (d *Distro) GetISOName() string {
-	timestamp := time.Now().Format("2006-01-02_1504") // Esempio: 2026-04-26_1700
+	timestamp := time.Now().Format("2006-01-02_1504")
+	// Chiamiamo il metodo che genera il prefisso
+	prefix := d.GetISOPrefix()
+	return fmt.Sprintf("%s%s.iso", prefix, timestamp)
+}
 
-	// Puliamo il nome della distro (niente spazi, tutto minuscolo)
+// GetISOPrefix genera la parte iniziale: egg-of-<distro>-<host>-<arch>-
+func (d *Distro) GetISOPrefix() string {
+	// Puliamo il nome della distro
 	distroName := strings.ToLower(strings.ReplaceAll(d.DistroID, " ", "-"))
+
+	hostName, err := os.Hostname()
+	if err != nil {
+		hostName = "unknown"
+	}
+	hostName = strings.ToLower(strings.ReplaceAll(hostName, " ", "-"))
 
 	arch := d.Arch
 	if arch == "" {
 		arch = runtime.GOARCH
 	}
 
-	return fmt.Sprintf("egg-of-%s-%s-%s.iso", distroName, arch, timestamp)
+	return fmt.Sprintf("egg-of-%s-%s-%s-", distroName, hostName, arch)
 }
