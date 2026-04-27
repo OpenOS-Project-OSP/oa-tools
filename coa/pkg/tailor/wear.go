@@ -49,24 +49,32 @@ func Wear(costumeName string, noAcc bool, noFirm bool) error {
 
 	// 4. Installazione Pacchetti
 	if len(suit.Sequence.Packages) > 0 {
-		utils.LogCoala("Verifica e installazione pacchetti...")
+		utils.LogCoala("Verifica pacchetti nel database APT...")
 		available := getAvailablePackages()
 		var toInstall []string
 
 		for _, pkg := range suit.Sequence.Packages {
-			// ✨ PULIZIA STRINGHE: Rimuoviamo spazi e caratteri invisibili
+			// Puliuamo il nome del pacchetto da spazi, tab o caratteri invisibili
 			cleanPkg := strings.TrimSpace(pkg)
-			cleanPkg = strings.ReplaceAll(cleanPkg, "\u00a0", "")
+
+			// Se la riga era vuota o solo uno spazio (succede con i commenti nello YAML)
+			if cleanPkg == "" {
+				continue
+			}
 
 			if _, ok := available[cleanPkg]; ok {
 				toInstall = append(toInstall, cleanPkg)
 			} else {
-				utils.LogCoala("⚠️  Pacchetto non trovato, salto: [%s]", cleanPkg)
+				// Logghiamo tra parentesi quadre per vedere se ci sono spazi residui
+				utils.LogCoala("⚠️  Pacchetto non trovato: [%s]", cleanPkg)
 			}
 		}
 
 		if len(toInstall) > 0 {
+			utils.LogCoala("Installazione di %d pacchetti in corso...", len(toInstall))
 			installWithRetries(toInstall, 3)
+		} else {
+			utils.LogCoala("Nessun pacchetto nuovo da installare.")
 		}
 	}
 

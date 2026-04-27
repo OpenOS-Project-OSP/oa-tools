@@ -1,10 +1,12 @@
 package tailor
 
 import (
+	"bufio"
 	"coa/pkg/distro"
 	"coa/pkg/utils"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -69,18 +71,32 @@ func loadSuit(yamlFile string) (*Suit, error) {
 func getAvailablePackages() map[string]struct{} {
 	available := make(map[string]struct{})
 
-	// Usiamo 'apt-cache pkgnames'
-	out, err := utils.ExecCapture("apt-cache pkgnames")
+	// Usiamo il percorso assoluto e chiamiamo direttamente il binario
+	// evitando di passare per la shell (sh -c) di ExecCapture
+	cmd := exec.Command("/usr/bin/apt-cache", "pkgnames")
+
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		utils.LogError("Errore durante l'esecuzione di apt-cache: %v", err)
+		utils.LogError("Errore pipe apt-cache: %v", err)
 		return available
 	}
 
-	// Sostituiamo ogni possibile ritorno a capo (\r\n o \n) con uno spazio
-	// e poi dividiamo per campi per essere sicuri di avere solo i nomi puliti
-	fields := strings.Fields(out)
-	for _, pkg := range fields {
-		available[pkg] = struct{}{}
+	if err := cmd.Start(); err != nil {
+		utils.LogError("Errore avvio apt-cache: %v", err)
+		return available
+	}
+
+	// Scannerizziamo l'output riga per riga: efficiente e pulito
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" {
+			available[line] = struct{}{}
+		}
+	}
+
+	if err := cmd.Wait(); err != nil {
+		utils.LogError("apt-cache ha riportato un errore: %v", err)
 	}
 
 	utils.LogCoala("Database pacchetti caricato: %d nomi trovati.", len(available))
