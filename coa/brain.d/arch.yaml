@@ -155,11 +155,9 @@ remaster:
     description: "Creazione gancio di compatibilità per Archiso"
     command: "oa_shell"
     run_command: |
-      # Andiamo nella radice della ISO (isodir)
       cd /home/eggs/isodir
       mkdir -p arch/x86_64
-      # Il link punta al file vero che risiede in live/
-      ln -sf ../../live/filesystem.squashfs ./arch/x86_64/airootfs.sfs
+      ln -f live/filesystem.squashfs arch/x86_64/airootfs.sfs
     chroot: false
 
   # ---------------------------------------------------------
