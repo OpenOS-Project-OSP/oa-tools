@@ -149,6 +149,15 @@ remaster:
 
 
   # ---------------------------------------------------------
+  # COMPRESSIONE SQUASHFS
+  # ---------------------------------------------------------
+  - name: "coa-squashfs"
+    description: "Compressione del sistema (ZSTD)"
+    command: "oa_shell"
+    run_command: "mksquashfs /home/eggs/liveroot /home/eggs/isodir/live/filesystem.squashfs -comp zstd -Xcompression-level 3 -b 1M -processors 4 -noappend -wildcards -ef /tmp/coa/excludes.list"
+
+
+  # ---------------------------------------------------------
   # ARCH-COMPATIBILITY: Hardlink per ingannare gli hook archiso
   # ---------------------------------------------------------
   - name: "coa-arch-compat"
@@ -159,14 +168,6 @@ remaster:
       mkdir -p arch/x86_64
       ln -f live/filesystem.squashfs arch/x86_64/airootfs.sfs
     chroot: false
-
-  # ---------------------------------------------------------
-  # COMPRESSIONE SQUASHFS
-  # ---------------------------------------------------------
-  - name: "coa-squashfs"
-    description: "Compressione del sistema (ZSTD)"
-    command: "oa_shell"
-    run_command: "mksquashfs /home/eggs/liveroot /home/eggs/isodir/live/filesystem.squashfs -comp zstd -Xcompression-level 3 -b 1M -processors 4 -noappend -wildcards -ef /tmp/coa/excludes.list"
 
   # ---------------------------------------------------------
   # MASTERIZZAZIONE ISO (XORRISO)
