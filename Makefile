@@ -31,7 +31,7 @@ build_coa:
 	@cd $(COA_DIR) && go build -ldflags "-X 'coa/pkg/cmd.AppVersion=$(VERSION)'" -o coa main.go
 	@echo "  GENERATING DOCUMENTATION..."
 	# Il '-' iniziale impedisce a make di fallire se il comando _gen_docs non esiste ancora
-	@-./$(COA_BIN) _gen_docs --target ./$(COA_DIR)/docs 2>/dev/null || true
+	# @-./$(COA_BIN) _gen_docs --target ./$(COA_DIR)/docs 2>/dev/null || true
 
 clean:
 	@echo "  Pulizia binari e piani di volo..."
