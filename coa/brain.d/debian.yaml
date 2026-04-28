@@ -141,10 +141,11 @@ remaster:
     description: "Smontaggio e pulizia finale (Smart Umount)"
     command: "oa_umount"
 
+# Profilo di Installazione - Solo logica post-copy
 install:
-  - name: "coa-initrd-target"
-    description: "Rigenerazione initramfs sul sistema installato"
-    command: "oa_shell"
-    run_command: "update-initramfs -u -k all"
-    chroot: true
-    
+  - name: "finalize"
+    description: "Configurazione bootloader e initramfs"
+    command: |
+      update-initramfs -u
+      grub-install --recheck /dev/sda
+      update-grub

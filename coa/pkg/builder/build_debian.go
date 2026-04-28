@@ -7,16 +7,6 @@ import (
 	"path/filepath"
 )
 
-// Definiamo i colori per l'output in modo centralizzato.
-// Questi blocchi rimarranno identici nei builder per Arch e Fedora.
-const (
-	ColorReset  = "\033[0m"
-	ColorGreen  = "\033[32m"
-	ColorBlue   = "\033[1;34m"
-	ColorCyan   = "\033[36m"
-	ColorYellow = "\033[33m"
-)
-
 func buildDebianPackage(projRoot, oaDir, coaDir, pkgVersion string) {
 	pkgName := fmt.Sprintf("oa-tools_%s_amd64", pkgVersion)
 	buildDir := filepath.Join("/tmp", pkgName)
@@ -25,12 +15,10 @@ func buildDebianPackage(projRoot, oaDir, coaDir, pkgVersion string) {
 	os.RemoveAll(buildDir)
 
 	// 1. Creazione struttura directory standard Debian.
-	// Nota per Arch/Fedora: /usr/bin e /etc sono universali.
-	// Le directory di man e completion potrebbero variare leggermente.
 	dirs := []string{
 		filepath.Join(buildDir, "DEBIAN"),
 		filepath.Join(buildDir, "usr/bin"),
-		filepath.Join(buildDir, "etc/oa-tools.d/brain.d"), // Configurazione modulare per coa (the mind)
+		filepath.Join(buildDir, "etc/oa-tools.d/brain.d"), // Cartella per i profili delle distribuzioni
 		filepath.Join(buildDir, "usr/share/man/man1"),
 		filepath.Join(buildDir, "usr/share/bash-completion/completions"),
 		filepath.Join(buildDir, "usr/share/zsh/vendor-completions"),
@@ -41,32 +29,25 @@ func buildDebianPackage(projRoot, oaDir, coaDir, pkgVersion string) {
 	}
 
 	// 2. Installazione binari e creazione alias 'eggs'.
-	// Spostiamo tutto in /usr/bin per seguire gli standard delle distro moderne.
 	binPath := filepath.Join(buildDir, "usr/bin")
-
-	// Copiamo il Cervello (coa) e il Mulo (oa)
 	copyFile(filepath.Join(oaDir, "oa"), filepath.Join(binPath, "oa"))
 	copyFile(filepath.Join(coaDir, "coa"), filepath.Join(binPath, "coa"))
-
 	os.Chmod(filepath.Join(binPath, "oa"), 0755)
 	os.Chmod(filepath.Join(binPath, "coa"), 0755)
-
-	// Link simbolico per compatibilità: 'eggs' ora punta al nuovo cuore 'coa'
 	os.Symlink("coa", filepath.Join(binPath, "eggs"))
 
-	// 3. Gestione della Configurazione YAML (/etc/oa-tools.d).
-	// Questo blocco definisce l'identità del sistema e sarà il riferimento per ogni distro.
+	// 3. Gestione della Configurazione YAML e Popolamento brain.d
 	confDest := filepath.Join(buildDir, "etc/oa-tools.d")
+	brainDest := filepath.Join(confDest, "brain.d")
 	
-	// Generazione del file di configurazione principale.
-	// Il dialetto è "oa" [cite: 30-03-2026] e la filosofia è integrata [cite: 29-03-2026].
+	// Generazione del file di configurazione principale oa-tools.yaml
 	oaYamlContent := fmt.Sprintf(`---
 # oa-tools configuration
 # coa is the mind and oa the arm
 # Philosophy: https://penguins-eggs.net/blog/eggs-bananas
 
 system:
-  dialect: "%s"
+  dialect: "oa"
   version: "%s"
 
 wardrobe:
@@ -76,14 +57,19 @@ wardrobe:
 remaster:
   default_user: "artisan"
   work_dir: "/home/eggs"
-`, "oa", pkgVersion)
+`, pkgVersion)
 
 	os.WriteFile(filepath.Join(confDest, "oa-tools.yaml"), []byte(oaYamlContent), 0644)
 
-	// Riversamento di eventuali file dalla cartella 'conf' del progetto (es. brain.d/*.yaml)
-	confSrc := filepath.Join(projRoot, "conf")
-	if _, err := os.Stat(confSrc); err == nil {
-		exec.Command("sh", "-c", fmt.Sprintf("cp -r %s/* %s/", confSrc, confDest)).Run()
+	// --- IL FIX: Copia del contenuto di brain.d ---
+	// Prendiamo l'indice e i profili YAML dalla cartella sorgente di sviluppo
+	brainSrc := filepath.Join(projRoot, "coa", "brain.d")
+	if _, err := os.Stat(brainSrc); err == nil {
+		fmt.Printf("%s[build]%s Popolamento brain.d con i profili distro...\n", ColorBlue, ColorReset)
+		// Copiamo tutto il contenuto (*.yaml) nella destinazione del pacchetto
+		exec.Command("sh", "-c", fmt.Sprintf("cp -r %s/* %s/", brainSrc, brainDest)).Run()
+	} else {
+		fmt.Printf("%s[warning]%s Sorgente brain.d non trovata in %s\n", ColorYellow, ColorReset, brainSrc)
 	}
 
 	// 4. Documentazione (Man pages)
@@ -96,7 +82,6 @@ remaster:
 	copyFile(filepath.Join(coaDir, "docs/completion/coa.zsh"), filepath.Join(buildDir, "usr/share/zsh/vendor-completions/_coa"))
 	copyFile(filepath.Join(coaDir, "docs/completion/coa.fish"), filepath.Join(buildDir, "usr/share/fish/vendor_completions.d/coa.fish"))
 
-	// Symlink per i completamenti dell'alias eggs per tutte le shell
 	os.Symlink("coa", filepath.Join(buildDir, "usr/share/bash-completion/completions/eggs"))
 	os.Symlink("_coa", filepath.Join(buildDir, "usr/share/zsh/vendor-completions/_eggs"))
 	os.Symlink("coa.fish", filepath.Join(buildDir, "usr/share/fish/vendor_completions.d/eggs.fish"))
@@ -108,9 +93,7 @@ remaster:
 		f.Close()
 	}
 
-	// 7. Generazione file control (Debian Specific)
-	// Nota per Arch: i dati qui sotto andranno nel PKGBUILD.
-	// Nota per Fedora: i dati qui sotto andranno nello SPEC file.
+	// 7. Generazione file control
 	controlContent := fmt.Sprintf(`Package: oa-tools
 Version: %s
 Architecture: amd64
@@ -126,18 +109,17 @@ Description: coa is the mind and oa the arm
 	fmt.Printf("%s[build]%s Packing .deb archive (%s)...\n", ColorBlue, ColorReset, pkgVersion)
 	dpkgCmd := exec.Command("dpkg-deb", "--build", buildDir)
 	if err := dpkgCmd.Run(); err != nil {
-		fmt.Printf("%s[ERROR]%s Failed to build package: %v\n", ColorReset, ColorReset, err)
+		fmt.Printf("%s[ERROR]%s Failed to build package: %v\n", ColorRed, ColorReset, err)
 		return
 	}
 
 	// Spostamento del pacchetto finale nella root del progetto
 	debFile := pkgName + ".deb"
 	finalTarget := filepath.Join(projRoot, debFile)
-
 	data, _ := os.ReadFile(filepath.Join("/tmp", debFile))
 	os.WriteFile(finalTarget, data, 0644)
 
-	// Pulizia finale per lasciare il sistema in ordine
+	// Pulizia finale
 	os.RemoveAll(buildDir)
 	os.Remove(filepath.Join("/tmp", debFile))
 

@@ -23,7 +23,7 @@ la rimasterizzazione e l'installazione del sistema.
 * [coa export](coa_export.md)	 - Export artifacts (iso, pkg) to a remote Proxmox storage
 * [coa kill](coa_kill.md)	 - Free the nest and unmount filesystems
 * [coa remaster](coa_remaster.md)	 - Start a system remastering flight (ISO production)
-* [coa sysinstall](coa_sysinstall.md)	 - Launch the graphical system installer (Calamares + OA)
+* [coa sysinstall](coa_sysinstall.md)	 - Lancia l'installatore di sistema (GUI o TUI)
 * [coa tools](coa_tools.md)	 - Strumenti di utilità per la manutenzione e il sistema
 * [coa version](coa_version.md)	 - Print the version number of coa
 * [coa wardrobe](coa_wardrobe.md)	 - Gestisce e applica vestiti (costumi e accessori) al sistema

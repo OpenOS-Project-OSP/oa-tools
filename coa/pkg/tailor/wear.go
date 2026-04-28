@@ -123,6 +123,12 @@ func applySuit(dir string, suit *Suit) error {
 	if len(allCmds) > 0 {
 		utils.LogCoala("[%s] Esecuzione script...", suit.Name)
 		for _, command := range allCmds {
+			if strings.Contains(command, "hostname.sh") {
+				// Ci assicuriamo di non duplicarlo se è già presente
+				if !strings.Contains(command, suit.Name) {
+					command = fmt.Sprintf("%s %s", command, suit.Name)
+				}
+			}
 			utils.Exec(command)
 		}
 	}
