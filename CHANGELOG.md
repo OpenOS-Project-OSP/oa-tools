@@ -2,6 +2,43 @@
 
 # Changelog - oa-tools
 
+# Changelog - oa (Artisan's Dialect of Eggs)
+
+## [0.7.0] - 2026-04-29
+### "The Agnostic Artisan" Release
+
+This release implements the **"Eggs & Bananas"** philosophy: reducing maintenance costs by 90% while retaining the power of the original wardrobe. The tailor logic is now lighter, faster, and ready for a multi-distro world.
+
+### Added
+- **Distro Agnosticism**: `oa` now detects the running distribution and adapts its "tailoring" strategy.
+- **AI-Assisted Tailoring**: For non-Debian systems (like Arch Linux), `oa` now generates a comprehensive `AIPrompt.txt` directly in the user's Home directory.
+- **Hardware-Aware Prompts**: The AI prompt now includes `lspci` data (VGA/3D controllers) and available `xsessions` to help the AI suggest the correct drivers and display manager configurations.
+- **Smart APT Filtering**: On Debian-based systems, `oa` now verifies package existence via `apt-cache` before attempting installation, preventing a single missing package from breaking the entire process.
+- **Robust Path Resolution**: Post-installation scripts (using `../../scripts/` syntax) are now automatically resolved to absolute paths and granted execution permissions.
+- **Persistent Logging**: Added `/var/log/coa-tailor.log` for background auditing and improved user-facing logs.
+
+### Changed
+- **Flat YAML Structure**: Deprecated the nested `sequence`/`finalize` blocks in favor of a flat, clean `index.yaml` at the root of each costume/accessory.
+- **Simplified Wardrobe**: Removed legacy repository management from the wardrobe logic to favor system-native tools or AI guidance.
+- **Refactored Tailor Engine**: The `wear` logic is now 90% simpler to maintain while remaining 90% as convenient as the original implementation.
+
+### Fixed
+- Fixed script execution errors where relative paths were not found by the shell.
+- Fixed `sudo` environment issues: `AIPrompt.txt` and synced home files now correctly belong to the real user even when run with root privileges.
+
+---
+
+## Release Note: oa 0.7.0 - The Agnostic Artisan
+
+We are proud to announce the release of **oa 0.7.0**. 
+
+In the spirit of pragmatism, we have stripped away the complexity that made cross-distro support difficult. By embracing the "Eggs & Bananas" approach, we've created a "Tailor" that isn't just a package installer, but an intelligent assistant.
+
+Whether you are on a "naked" Debian or a fresh Arch Linux installation, `oa` helps you dress your system with your favorite costumes. If it can't install a package automatically, it provides you with a "Medical Record" of your system (`AIPrompt.txt`) to hand over to an AI assistant, ensuring you get the perfect configuration for your specific hardware (including tricky ones like QXL or Nvidia).
+
+**It's time to sow the seeds of a truly universal Linux customizer.**
+`
+Ho sistemato il Changelog includendo tutti i punti chiave discussi. Buona semina per questa versione 0.7.0! 🐧🚀
 ## [0.6.5] - 2026-04-15
 
 ### 🚀 Added

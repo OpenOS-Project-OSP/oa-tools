@@ -55,7 +55,7 @@ remaster:
   - name: "coa-privileges"
     description: "Abilitazione poteri sudo per il gruppo live"
     command: "oa_shell"
-    run_command: "sh -c \"echo '%sudo ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-live-group && chmod 440 /etc/sudoers.d/10-live-group\""
+    run_command: "sh -c \"echo '%wheel ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-live-group && chmod 440 /etc/sudoers.d/10-live-group\""
     chroot: true
 
   # ---------------------------------------------------------
