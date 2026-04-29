@@ -18,17 +18,22 @@ pkgrel=%s
 pkgdesc="oa-tools universal Linux remastering"
 arch=('x86_64')
 license=('GPL3')
-# Aggiunte git e rsync come dipendenze vitali per il wardrobe e la sysroot
 depends=('archiso' 'xorriso' 'squashfs-tools' 'git' 'rsync' 'sudo')
 conflicts=('penguins-eggs')
+backup=('etc/oa-tools.d/oa-tools.yaml')
 options=(!debug)
 
 build() {
-    # 0. Compilazione del motore C (oa)
-    # Assicuriamo che il "braccio" sia compilato nativamente per l'architettura target
+    # Compilazione del "braccio" (C)
     msg2 "Compilazione del motore C (oa)..."
     cd "${startdir}/oa"
     make clean && make
+
+    # Compilazione della "mente" (Go)
+    msg2 "Compilazione del motore Go (coa)..."
+    cd "${startdir}/coa"
+    # Usiamo i flag per la versione passati dal builder
+    go build -ldflags "-X 'coa/pkg/cmd.AppVersion=${pkgver}'" -o coa main.go
 }
 
 package() {
@@ -41,6 +46,7 @@ package() {
     # 2. Configurazione di sistema (/etc/oa-tools.d)
     # Creiamo la struttura per la configurazione YAML e la brain.d per coa
     install -d "${pkgdir}/etc/oa-tools.d/brain.d"
+    cp -r "${startdir}/coa/brain.d/"* "${pkgdir}/etc/oa-tools.d/brain.d/"
 
     # Generazione del file di configurazione principale oa-tools.yaml
     # Utilizziamo il dialetto "oa" [cite: 30-03-2026] e citiamo la filosofia [cite: 29-03-2026]

@@ -48,11 +48,12 @@ remaster:
     description: "Gestione nativa identità (Purge & Inject stile Yocto)"
     command: "oa_users"
 
+
   # ---------------------------------------------------------
   # PRIVILEGI SUDO
   # ---------------------------------------------------------
   - name: "coa-privileges"
-    description: "Abilitazione poteri sudo per il gruppo wheel (Arch standard)"
+    description: "Abilitazione poteri sudo per il gruppo live"
     command: "oa_shell"
     run_command: "sh -c \"echo '%sudo ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-live-group && chmod 440 /etc/sudoers.d/10-live-group\""
     chroot: true
@@ -112,7 +113,7 @@ remaster:
     run_command: |
       set -e
       VOL_ID="OA_LIVE"
-      BOOT_PARAMS="archisobasedir=live archisolabel=${VOL_ID} cow_spacesize=2G #quiet splash"
+      BOOT_PARAMS="archisobasedir=arch archisolabel=${VOL_ID} cow_spacesize=2G # quiet splash"
       WORK_DIR="/home/eggs/isodir"
 
       # 1. GRUB.cfg
@@ -185,11 +186,17 @@ remaster:
     command: "oa_umount"
 
 # ==============================================================================
-# PROFILO DI INSTALLAZIONE (TARGET)
+# Profilo di Installazione per Arch Linux - Logica Evolution
 # ==============================================================================
 install:
-  - name: "coa-initrd-target"
-    description: "Rigenerazione mkinitcpio sul sistema installato"
-    command: "oa_shell"
-    run_command: "mkinitcpio -P"
-    chroot: true
+  - name: "finalize"
+    description: "Generazione initramfs e configurazione GRUB"
+    command: |
+      # Rigenera le immagini initramfs per tutti i kernel installati
+      mkinitcpio -P
+      
+      # Installa il bootloader (coa sostituirà /dev/sda con il disco reale)
+      grub-install --target=i386-pc --recheck /dev/sda
+      
+      # Genera il file di configurazione di GRUB
+      grub-mkconfig -o /boot/grub/grub.cfg
