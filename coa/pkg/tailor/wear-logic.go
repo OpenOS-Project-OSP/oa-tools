@@ -17,7 +17,7 @@ import (
 // logToFile scrive un messaggio sia sul log di sistema che su un file locale
 func logToFile(message string) {
 	utils.LogCoala(message)
-	
+
 	logPath := "/var/log/coa-tailor.log"
 	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -133,14 +133,57 @@ func installWithRetries(packages []string, retries int) {
 		}
 		time.Sleep(2 * time.Second)
 	}
-	
+
 	logToFile("❌ Errore critico durante l'installazione pacchetti dopo i tentativi.")
 }
 
+// printAiPrompt genera un prompt ricco di informazioni e crea il file AIPrompt.txt
 func printAiPrompt(packages []string) {
 	d := distro.NewDistro()
-	logToFile(fmt.Sprintf("Sistema %s rilevato (Non-Debian). Generazione prompt AI...", d.DistroLike))
-	fmt.Println("\n" + utils.ColorCyan + "--- PROMPT PER L'ASSISTENTE AI ---" + utils.ColorReset)
-	fmt.Printf("Sto usando %s. Dammi il comando per installare questi pacchetti:\n%s\n", d.DistroLike, strings.Join(packages, " "))
-	fmt.Println(utils.ColorCyan + "----------------------------------" + utils.ColorReset + "\n")
+	logToFile(fmt.Sprintf("Sistema %s rilevato (Non-Debian). Generazione prompt e file AIPrompt.txt...", d.DistroLike))
+
+	// 1. Cattura info Hardware VGA/3D
+	gpuCmd := "lspci -k | grep -A 2 -E 'VGA|3D'"
+	gpuInfo, _ := exec.Command("sh", "-c", gpuCmd).Output()
+
+	// 2. Cattura sessioni X11 disponibili
+	sessionCmd := "ls /usr/share/xsessions/ 2>/dev/null"
+	sessions, _ := exec.Command("sh", "-c", sessionCmd).Output()
+
+	// 3. Costruzione della stringa del prompt
+	var sb strings.Builder
+	sb.WriteString("--- PROMPT PER L'ASSISTENTE AI ---\n")
+	sb.WriteString(fmt.Sprintf("Sto usando %s (base %s).\n", d.DistroID, d.DistroLike))
+	sb.WriteString(fmt.Sprintf("Ho bisogno di installare e configurare questi pacchetti:\n%s\n\n", strings.Join(packages, " ")))
+
+	sb.WriteString("INFO HARDWARE (per driver video e KMS):\n")
+	if len(gpuInfo) > 0 {
+		sb.WriteString(string(gpuInfo))
+	} else {
+		sb.WriteString("Nessuna info VGA trovata.\n")
+	}
+
+	sb.WriteString("\nSESSIONI DESKTOP DISPONIBILI:\n")
+	if len(sessions) > 0 {
+		sb.WriteString(string(sessions))
+	} else {
+		sb.WriteString("Nessuna sessione trovata in /usr/share/xsessions/\n")
+	}
+
+	sb.WriteString("\nPer favore, dammi il comando esatto per installare i pacchetti equivalenti su questa distro e i passi necessari per configurare LightDM correttamente.\n")
+	sb.WriteString("----------------------------------------\n")
+
+	promptContent := sb.String()
+
+	// 4. Stampa a video
+	fmt.Println("\n" + utils.ColorCyan + promptContent + utils.ColorReset)
+
+	// 5. Scrittura su file AIPrompt.txt
+	err := os.WriteFile("AIPrompt.txt", []byte(promptContent), 0644)
+	if err != nil {
+		logToFile(fmt.Sprintf("Errore durante la creazione di AIPrompt.txt: %v", err))
+	} else {
+		logToFile("✅ File AIPrompt.txt generato con successo nella cartella corrente.")
+		fmt.Printf("File di prompt generato: %sAIPrompt.txt%s\n\n", utils.ColorYellow, utils.ColorReset)
+	}
 }
