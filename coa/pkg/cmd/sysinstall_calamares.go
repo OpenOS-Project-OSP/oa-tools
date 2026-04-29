@@ -32,13 +32,20 @@ func RunCalamaresInstaller() {
 		os.Exit(1)
 	}
 
-	// 1. Fase Preparazione (Scrive gli script in /tmp/coa)
+	// 2. Fase Preparazione (Scrive gli script in /tmp/coa)
 	if err := calamares.PrepareOABootloader(profile); err != nil {
 		utils.LogError("Errore preparazione script: %v", err)
 		return
 	}
 
-	// 2. Configurazione DINAMICA Utenti e Password
+	// 3. Fase di setuto (Pulisce /etc, estrae asse)
+	// NOTA: Assicurati che SetupAndLaunch non pialli il file appena creato!
+	if err := calamares.Setup(); err != nil {
+		utils.LogError("Calamares ha riscontrato un problema: %v", err)
+		return
+	}
+
+	// 4. Configurazione DINAMICA Utenti e Password
 	// Lo facciamo qui per garantire che il file /etc/calamares/modules/users.conf
 	// sia generato fresco in base alla distro corrente (Arch/Debian/Fedora)
 	if err := calamares.PrepareUserConf(); err != nil {
@@ -46,12 +53,11 @@ func RunCalamaresInstaller() {
 		// Non blocchiamo tutto, proviamo a procedere comunque
 	}
 
-	// 3. Fase Esecuzione (Pulisce /etc, estrae asset e lancia)
-	// NOTA: Assicurati che SetupAndLaunch non pialli il file appena creato!
-	if err := calamares.SetupAndLaunch(); err != nil {
-		utils.LogError("Calamares ha riscontrato un problema: %v", err)
-		return
+	// 5. LAUNCH: Calamares parte e trova la pappa pronta
+	if err := calamares.Launch(); err != nil {
+		utils.LogError("L'installatore si è chiuso con un errore: %v", err)
 	}
+
 }
 
 func init() {

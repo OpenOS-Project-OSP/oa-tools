@@ -15,10 +15,11 @@ func logCalamares(format string, a ...interface{}) {
 	fmt.Printf("%s[coa-calamares]%s %s\n", ColorCyan, ColorReset, msg)
 }
 
-// SetupAndLaunch coordina la pulizia, l'estrazione e l'avvio
-func SetupAndLaunch() error {
+// Setup coordina la pulizia, l'estrazione e la configurazione dinamica
+func Setup() error {
 	logCalamares("Generazione ambiente Evolution Edition...")
 
+	// Pulizia e preparazione directory
 	os.RemoveAll(coaCalamaresDir)
 
 	if err := assets.ExtractCalamares(coaCalamaresDir); err != nil {
@@ -29,14 +30,25 @@ func SetupAndLaunch() error {
 		return fmt.Errorf("errore creazione directory moduli: %v", err)
 	}
 
+	// Qui dentro deployDynamicConfigs chiamerà anche la generazione di users.conf
 	if err := deployDynamicConfigs(); err != nil {
 		return err
 	}
 
-	logFile, _ := os.Create("/var/log/calamares.log")
+	return nil
+}
+
+// Launch avvia effettivamente il processo Calamares e gestisce i log
+func Launch() error {
+	logFile, err := os.Create("/var/log/calamares.log")
+	if err != nil {
+		return fmt.Errorf("impossibile creare il file di log: %v", err)
+	}
 	defer logFile.Close()
 
 	cmd := exec.Command("calamares", "-d", "-D", "8")
+
+	// Mandiamo l'output sia a video che su file
 	multiWriter := io.MultiWriter(os.Stdout, logFile)
 	cmd.Stdout = multiWriter
 	cmd.Stderr = multiWriter
