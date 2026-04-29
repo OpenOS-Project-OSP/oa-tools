@@ -1,32 +1,28 @@
 package cmd
 
 import (
-	"coa/pkg/pilot"
-	"coa/pkg/utils"
 	"github.com/spf13/cobra"
-	"os"
 )
 
+// sysinstallCmd è il comando padre: 'coa sysinstall'
+// Funge da punto di ingresso unico per tutti i motori di installazione.
 var sysinstallCmd = &cobra.Command{
 	Use:   "sysinstall",
 	Short: "Lancia l'installatore di sistema (GUI o TUI)",
+	Long: `coa sysinstall è l'orchestratore per l'installazione del sistema su disco.
+Permette di scegliere tra l'interfaccia grafica (Calamares) o quella testuale (Krill).
+
+Esempi:
+  sudo coa sysinstall calamares
+  sudo coa sysinstall krill`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Controllo permessi (coa deve girare come root)
-		CheckSudoRequirements(cmd.Name(), true)
-
-		// 1. Caricamento del profilo tramite il Pilot
-		profile, err := pilot.DetectAndLoad()
-		if err != nil {
-			utils.LogError("Impossibile caricare il profilo: %v", err)
-			os.Exit(1)
-		}
-
-		// 2. Scelta dell'installatore (per ora forziamo Calamares)
-		// Qui passiamo il 'profile' che abbiamo appena caricato!
-		RunCalamaresInstaller(profile)
+		// Se l'utente non specifica un sottocomando, mostriamo l'aiuto
+		// Questo evita che il comando non faccia nulla se invocato da solo.
+		cmd.Help()
 	},
 }
 
 func init() {
+	// Registriamo sysinstall nel comando principale di coa
 	rootCmd.AddCommand(sysinstallCmd)
 }

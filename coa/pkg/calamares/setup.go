@@ -9,15 +9,6 @@ import (
 	"coa/pkg/assets"
 )
 
-// Costanti globali del pacchetto calamares
-const (
-	coaCalamaresDir = "/etc/calamares"
-	modulesDir      = "/etc/calamares/modules"
-	stagingDir      = "/tmp/coa"
-	ColorCyan       = "\033[1;36m"
-	ColorReset      = "\033[0m"
-)
-
 // logCalamares stampa i log con il prefisso coa
 func logCalamares(format string, a ...interface{}) {
 	msg := fmt.Sprintf(format, a...)
@@ -33,7 +24,7 @@ func SetupAndLaunch() error {
 	if err := assets.ExtractCalamares(coaCalamaresDir); err != nil {
 		return fmt.Errorf("errore estrazione asset: %v", err)
 	}
-	
+
 	if err := os.MkdirAll(modulesDir, 0755); err != nil {
 		return fmt.Errorf("errore creazione directory moduli: %v", err)
 	}
@@ -45,7 +36,7 @@ func SetupAndLaunch() error {
 	logFile, _ := os.Create("/var/log/calamares.log")
 	defer logFile.Close()
 
-	cmd := exec.Command("calamares", "-d", "-D", "8") 
+	cmd := exec.Command("calamares", "-d", "-D", "8")
 	multiWriter := io.MultiWriter(os.Stdout, logFile)
 	cmd.Stdout = multiWriter
 	cmd.Stderr = multiWriter
@@ -67,7 +58,7 @@ func deployDynamicConfigs() error {
 	if err != nil {
 		return fmt.Errorf("modulo bootloader non trovato in staging: %v", err)
 	}
-	
+
 	return os.WriteFile(modulesDir+"/shellprocess_oa_bootloader.conf", bootData, 0644)
 }
 
