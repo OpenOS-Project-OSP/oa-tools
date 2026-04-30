@@ -5,7 +5,7 @@
     - "bigcommunity"
     - "BigLinux"
     
-- distroLike: "Ubuntu"
+- distroLike: "Debian"
   codenameLike: "trixie"
   family: "debian"
   derivatives:
