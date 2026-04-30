@@ -61,8 +61,8 @@ func parseOsRelease() map[string]string {
 func resolveDerivative(distroID string, codenameID string) (bool, *Distro) {
 	// Ordine di ricerca: Locale (sviluppo) -> Sistema (produzione)
 	paths := []string{
-		"conf/derivatives.yaml",
-		"/etc/oa-tools.d/derivatives.yaml",
+		"brain.d/derivatives.yaml",
+		"/etc/oa-tools.d/brain.d/derivatives.yaml",
 	}
 
 	var yamlData []byte
@@ -119,25 +119,27 @@ func NewDistro() *Distro {
 	}
 
 	switch idLower {
-	case "debian":
-		d.FamilyID = "debian"
-		d.DistroLike = "Debian"
-		d.DistroUniqueID = rawCodename
-		return d
-	case "manjaro":
-		d.FamilyID = "manjaro"
-		d.DistroLike = "Manjaro"
-		d.DistroUniqueID = "rolling"
-		return d
-
 	case "arch":
 		d.FamilyID = "archlinux"
 		d.DistroLike = "Arch"
 		d.DistroUniqueID = "rolling"
 		return d
+		
+	case "debian":
+		d.FamilyID = "debian"
+		d.DistroLike = "Debian"
+		d.DistroUniqueID = rawCodename
+		return d
+
 	case "fedora":
 		d.FamilyID = "fedora"
 		d.DistroLike = "Fedora"
+		d.DistroUniqueID = "rolling"
+		return d
+
+	case "manjaro":
+		d.FamilyID = "manjaro"
+		d.DistroLike = "Manjaro"
 		d.DistroUniqueID = "rolling"
 		return d
 	}
