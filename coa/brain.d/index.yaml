@@ -9,7 +9,7 @@ distributions:
     file: "arch.yaml"
 
   - id: "manjaro"
-    like: ["manjaro", "biglinux"]
+    like: ["manjaro", "bigcommunity"]
     file: "manjaro.yaml"
 
   - id: "fedora"

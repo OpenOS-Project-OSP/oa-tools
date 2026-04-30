@@ -62,8 +62,7 @@ func resolveDerivative(distroID string, codenameID string) (bool, *Distro) {
 	// Ordine di ricerca: Locale (sviluppo) -> Sistema (produzione)
 	paths := []string{
 		"conf/derivatives.yaml",
-		"/etc/coa/derivatives.yaml",
-		"derivatives.yaml",
+		"/etc/oa-tools.d/derivatives.yaml",
 	}
 
 	var yamlData []byte
@@ -71,6 +70,7 @@ func resolveDerivative(distroID string, codenameID string) (bool, *Distro) {
 	for _, p := range paths {
 		yamlData, err = os.ReadFile(p)
 		if err == nil {
+			fmt.Printf("  \033[1;30m[debug]\033[0m Trovato: %-25s ", p)
 			break // Trovato!
 		}
 	}

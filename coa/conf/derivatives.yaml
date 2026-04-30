@@ -1,0 +1,7 @@
+- distroLike: "Manjaro"
+  codenameLike: "rolling"
+  family: "manjaro"
+  derivatives:
+    - "bigcommunity"
+    - "BigLinux"
+    
