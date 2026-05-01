@@ -45,13 +45,25 @@ func RunCalamaresInstaller() {
 		return
 	}
 
-	// 4. Configurazione DINAMICA Utenti e Password
-	// Lo facciamo qui per garantire che il file /etc/calamares/modules/users.conf
-	// sia generato fresco in base alla distro corrente (Arch/Debian/Fedora)
-	if err := calamares.PrepareUserConf(); err != nil {
-		utils.LogError("Errore configurazione utenti: %v", err)
+	// 4. Configurazione DINAMICA
+	// partition.conf
+	if err := calamares.PreparePartitionConf(); err != nil {
+		utils.LogError("Errore configurazione paritition.conf: %v", err)
 		// Non blocchiamo tutto, proviamo a procedere comunque
 	}
+
+	// users.conf
+	if err := calamares.PrepareUserConf(); err != nil {
+		utils.LogError("Errore configurazione users.conf: %v", err)
+		// Non blocchiamo tutto, proviamo a procedere comunque
+	}
+
+	// displaymanager.conf
+	if err := calamares.PrepareDisplaymanagerConf(); err != nil {
+		utils.LogError("Errore configurazione users.conf: %v", err)
+		// Non blocchiamo tutto, proviamo a procedere comunque
+	}
+
 	if err := calamares.PrepareRemoveuserConf(); err != nil {
 		utils.LogError("Errore creazione removeuser.conf: %v", err)
 		// Non blocchiamo tutto, proviamo a procedere comunque
