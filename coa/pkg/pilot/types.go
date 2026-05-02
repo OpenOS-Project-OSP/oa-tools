@@ -1,21 +1,26 @@
 package pilot
 
+// Profile rappresenta la struttura completa del file YAML
 type Profile struct {
-	Remaster []YamlStep `yaml:"remaster"`
-	Install  []YamlStep `yaml:"install"`
+	Remaster []Step `yaml:"remaster"`
+	Install  []Step `yaml:"install"`
 }
 
-type YamlStep struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	Command     string `yaml:"command"`
-	RunCommand  string `yaml:"run_command"`
-	Chroot      bool   `yaml:"chroot"`
-	Path        string `yaml:"path"`
-	Src         string `yaml:"src"`
-	Dst         string `yaml:"dst"`
+// Step è l'unità fondamentale del piano di lavoro.
+// Rappresenta un'azione specifica definita nel profilo.
+type Step struct {
+	Name        string `yaml:"name" json:"name,omitempty"`
+	Description string `yaml:"description" json:"description"`
+	Action      string `yaml:"action" json:"action"` // Sostituisce Command per chiarezza semantica
+	RunCommand  string `yaml:"run_command,omitempty" json:"run_command,omitempty"`
+	Chroot      bool   `yaml:"chroot" json:"chroot"`
+	Path        string `yaml:"path,omitempty" json:"path,omitempty"`
+	Src         string `yaml:"src,omitempty" json:"src,omitempty"`
+	Dst         string `yaml:"dst,omitempty" json:"dst,omitempty"`
+	Users       []User `yaml:"users,omitempty" json:"users,omitempty"` // Supporto nativo per oa_users
 }
 
+// User definisce l'identità di un utente nel sistema live o installato
 type User struct {
 	Login    string   `yaml:"login" json:"login"`
 	Password string   `yaml:"password" json:"password"`

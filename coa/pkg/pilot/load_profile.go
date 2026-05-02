@@ -27,13 +27,12 @@ type DistroMap struct {
 func DetectAndLoad() (*Profile, error) {
 	// 1. Identità: Chi siamo?
 	myDistro := distro.NewDistro()
-	
 
 	// 2. Ricerca del percorso della configurazione (Dev vs System)
 	var baseDir string
 	pathsToTry := []string{
-		filepath.Join("coa", "brain.d"),          // Percorso di Sviluppo
-		"/etc/oa-tools.d/brain.d",                // Percorso di Produzione
+		filepath.Join("coa", "brain.d"), // Percorso di Sviluppo
+		"/etc/oa-tools.d/brain.d",       // Percorso di Produzione
 	}
 
 	for _, path := range pathsToTry {

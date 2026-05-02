@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"coa/pkg/pilot" // Aggiunto per poter usare pilot.Step
 )
 
 // expandMountLogic trasforma la vecchia logica statica del C in una sequenza di task JSON dinamici.
@@ -21,61 +23,64 @@ func expandMountLogic(basePath string) []OATask {
 		filepath.Join(overlay, "lowerdir"),
 	}
 	for _, d := range baseDirs {
-		tasks = append(tasks, OATask{Command: "oa_mkdir", Path: d, Info: "Setup base path"})
+		tasks = append(tasks, OATask{
+			Step: pilot.Step{Action: "oa_mkdir", Path: d, Description: "Setup base path"},
+		})
 	}
 
 	// 2. COPIE FISICHE: Necessarie per rendere il chroot funzionale e bootabile
-	// Copiamo /etc (configurazioni) e /boot (kernel/initrd)
-	tasks = append(tasks, OATask{Command: "oa_cp", Src: "/etc", Dst: liveroot, Info: "Copia fisica /etc"})
-	tasks = append(tasks, OATask{Command: "oa_cp", Src: "/boot", Dst: liveroot, Info: "Copia fisica /boot"})
+	tasks = append(tasks, OATask{Step: pilot.Step{Action: "oa_cp", Src: "/etc", Dst: liveroot, Description: "Copia fisica /etc"}})
+	tasks = append(tasks, OATask{Step: pilot.Step{Action: "oa_cp", Src: "/boot", Dst: liveroot, Description: "Copia fisica /boot"}})
 
-	// Copia dei symlink del kernel dalla root dell'host al liveroot
-	// Usiamo os.Lstat per controllare l'esistenza dei symlink senza seguirli
+	// Copia dei symlink del kernel
 	for _, link := range []string{"vmlinuz", "initrd.img", "vmlinuz.old", "initrd.img.old"} {
 		src := "/" + link
 		if _, err := os.Lstat(src); err == nil {
 			tasks = append(tasks, OATask{
-				Command: "oa_cp",
-				Src:     src,
-				Dst:     filepath.Join(liveroot, link),
-				Info:    "Copia symlink: " + link,
+				Step: pilot.Step{
+					Action:      "oa_cp",
+					Src:         src,
+					Dst:         filepath.Join(liveroot, link),
+					Description: "Copia symlink: " + link,
+				},
 			})
 		}
 	}
 
-	// 3. BIND MOUNTS DINAMICI (CON FIX USRMERGE): Proiettiamo il sistema host nel chroot (Read-Only)
-	// Controlliamo cosa esiste davvero sull'host per essere arch-agnostic e gestiamo i symlink!
+	// 3. BIND MOUNTS DINAMICI (CON FIX USRMERGE)
 	entries := []string{"bin", "sbin", "lib", "lib64", "opt", "root", "srv"}
 	for _, e := range entries {
 		src := "/" + e
-		// Usiamo Lstat perché vogliamo sapere se la cartella stessa è un link, senza seguirlo
 		if info, err := os.Lstat(src); err == nil {
 			if info.Mode()&os.ModeSymlink != 0 {
-				// È un symlink (Usrmerge attivo: es. /bin -> usr/bin)
-				// Leggiamo dove punta e lo ricreiamo identico nel chroot
+				// È un symlink (Usrmerge attivo)
 				target, err := os.Readlink(src)
 				if err == nil {
 					cmd := fmt.Sprintf("ln -sf %s %s", target, filepath.Join(liveroot, e))
 					tasks = append(tasks, OATask{
-						Command:    "oa_shell",
-						Info:       "Replica Usrmerge symlink: " + e,
-						RunCommand: cmd,
+						Step: pilot.Step{
+							Action:      "oa_shell",
+							Description: "Replica Usrmerge symlink: " + e,
+							RunCommand:  cmd,
+						},
 					})
 				}
 			} else {
-				// Cartella reale (non usrmerge), procediamo col bind mount classico
+				// Cartella reale, bind mount classico
 				tasks = append(tasks, OATask{
-					Command:  "oa_bind",
-					Src:      src,
-					Dst:      filepath.Join(liveroot, e),
-					ReadOnly: true,
-					Info:     "Bind mount proiettivo: " + e,
+					Step: pilot.Step{
+						Action:      "oa_bind",
+						Src:         src,
+						Dst:         filepath.Join(liveroot, e),
+						Description: "Bind mount proiettivo: " + e,
+					},
+					ReadOnly: true, // Campo tecnico di OATask
 				})
 			}
 		}
 	}
 
-	// 4. OVERLAY PER USR E VAR: Le parti che devono essere scrivibili durante il chroot
+	// 4. OVERLAY PER USR E VAR
 	for _, ovlDir := range []string{"usr", "var"} {
 		lower := filepath.Join(overlay, "lowerdir", ovlDir)
 		upper := filepath.Join(overlay, "upperdir", ovlDir)
@@ -83,38 +88,50 @@ func expandMountLogic(basePath string) []OATask {
 		merged := filepath.Join(liveroot, ovlDir)
 
 		// Creiamo i rami dell'overlay
-		tasks = append(tasks, OATask{Command: "oa_mkdir", Path: lower})
-		tasks = append(tasks, OATask{Command: "oa_mkdir", Path: upper})
-		tasks = append(tasks, OATask{Command: "oa_mkdir", Path: work})
+		tasks = append(tasks, OATask{Step: pilot.Step{Action: "oa_mkdir", Path: lower}})
+		tasks = append(tasks, OATask{Step: pilot.Step{Action: "oa_mkdir", Path: upper}})
+		tasks = append(tasks, OATask{Step: pilot.Step{Action: "oa_mkdir", Path: work}})
 
 		// Bind della directory originale su lower (ReadOnly)
-		tasks = append(tasks, OATask{Command: "oa_bind", Src: "/" + ovlDir, Dst: lower, ReadOnly: true})
+		tasks = append(tasks, OATask{
+			Step:     pilot.Step{Action: "oa_bind", Src: "/" + ovlDir, Dst: lower},
+			ReadOnly: true, // Campo tecnico di OATask
+		})
 
-		// Mount Overlay finale (unisce lower, upper e work in merged)
+		// Mount Overlay finale
 		opts := "lowerdir=" + lower + ",upperdir=" + upper + ",workdir=" + work
 		tasks = append(tasks, OATask{
-			Command: "oa_mount_generic",
-			Type:    "overlay",
-			Src:     "overlay",
-			Dst:     merged,
-			Opts:    opts,
-			Info:    "Overlay mount per scrivibilità: " + ovlDir,
+			Step: pilot.Step{
+				Action:      "oa_mount_generic",
+				Src:         "overlay",
+				Dst:         merged,
+				Description: "Overlay mount per scrivibilità: " + ovlDir,
+			},
+			Type: "overlay", // Campo tecnico
+			Opts: opts,      // Campo tecnico
 		})
 	}
 
-	// 5. API FILESYSTEMS: Mount dei filesystem virtuali necessari per i processi (chroot)
-	tasks = append(tasks, OATask{Command: "oa_mount_generic", Type: "proc", Src: "proc", Dst: filepath.Join(liveroot, "proc")})
-	tasks = append(tasks, OATask{Command: "oa_mount_generic", Type: "sysfs", Src: "sys", Dst: filepath.Join(liveroot, "sys")})
-	tasks = append(tasks, OATask{Command: "oa_bind", Src: "/dev", Dst: filepath.Join(liveroot, "dev"), Info: "API FS: dev"})
-	tasks = append(tasks, OATask{Command: "oa_bind", Src: "/run", Dst: filepath.Join(liveroot, "run"), Info: "API FS: run"})
+	// 5. API FILESYSTEMS
+	tasks = append(tasks, OATask{
+		Step: pilot.Step{Action: "oa_mount_generic", Src: "proc", Dst: filepath.Join(liveroot, "proc")},
+		Type: "proc",
+	})
+	tasks = append(tasks, OATask{
+		Step: pilot.Step{Action: "oa_mount_generic", Src: "sys", Dst: filepath.Join(liveroot, "sys")},
+		Type: "sysfs",
+	})
+	tasks = append(tasks, OATask{Step: pilot.Step{Action: "oa_bind", Src: "/dev", Dst: filepath.Join(liveroot, "dev"), Description: "API FS: dev"}})
+	tasks = append(tasks, OATask{Step: pilot.Step{Action: "oa_bind", Src: "/run", Dst: filepath.Join(liveroot, "run"), Description: "API FS: run"}})
 
 	// 6. CHROOT FIX: Creazione di /tmp con Sticky Bit e mount di tmpfs in RAM
-	// Questo blocco risolve in modo definitivo l'errore di mkinitcpio/pacman/apt
 	tmpPath := filepath.Join(liveroot, "tmp")
 	tasks = append(tasks, OATask{
-		Command:    "oa_shell",
-		Info:       "API FS: tmp (Sticky Bit + Tmpfs)",
-		RunCommand: "mkdir -p " + tmpPath + " && chmod 1777 " + tmpPath + " && mount -t tmpfs -o mode=1777 tmpfs " + tmpPath,
+		Step: pilot.Step{
+			Action:      "oa_shell",
+			Description: "API FS: tmp (Sticky Bit + Tmpfs)",
+			RunCommand:  "mkdir -p " + tmpPath + " && chmod 1777 " + tmpPath + " && mount -t tmpfs -o mode=1777 tmpfs " + tmpPath,
+		},
 	})
 
 	return tasks

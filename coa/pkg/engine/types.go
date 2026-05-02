@@ -4,23 +4,21 @@ import (
 	"coa/pkg/pilot"
 )
 
-// OATask rappresenta un singolo comando atomico per il binario oa
+// Task rappresenta un singolo comando atomico per il binario oa.
+// Grazie all'embedding di pilot.Step, eredita automaticamente:
+// Action, Description, RunCommand, Chroot, Path, Src, Dst, Users.
 type OATask struct {
-	Command    string       `json:"command"`
-	Info       string       `json:"info,omitempty"`
-	Path       string       `json:"path,omitempty"`
-	Src        string       `json:"src,omitempty"`
-	Dst        string       `json:"dst,omitempty"`
-	Type       string       `json:"type,omitempty"`
-	Opts       string       `json:"opts,omitempty"`
-	ReadOnly   bool         `json:"readonly,omitempty"`
-	RunCommand string       `json:"run_command,omitempty"`
-	Chroot     bool         `json:"chroot,omitempty"`
-	Users      []pilot.User `json:"users,omitempty"`
-	PathLiveFs string       `json:"pathLiveFs,omitempty"`
+	pilot.Step `json:",inline"` // Il "cuore" proveniente dallo YAML
+
+	// Campi tecnici specifici dell'Engine (non presenti nello YAML)
+	Type       string `json:"type,omitempty"`       // Tipo di filesystem (proc, sysfs, overlay)
+	Opts       string `json:"opts,omitempty"`       // Opzioni di mount o parametri extra
+	ReadOnly   bool   `json:"readonly,omitempty"`   // Flag per i bind mount
+	PathLiveFs string `json:"pathLiveFs,omitempty"` // Il percorso di lavoro (es. /home/eggs/ovl/liveroot)
 }
 
-// OAPlan è l'array di task che oa itererà
+// OAPlan è l'array di task che il binario oa itererà.
+// Usiamo Task (la nuova versione) al posto di OATask.
 type OAPlan struct {
 	Plan []OATask `json:"plan"`
 }

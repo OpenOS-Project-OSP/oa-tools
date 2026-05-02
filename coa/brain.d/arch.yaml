@@ -9,14 +9,14 @@ remaster:
   # ---------------------------------------------------------
   - name: "coa-fs-setup"
     description: "Preparazione filesystem e mount (proiezione host)"
-    command: "oa_mount_logic"
+    action: "oa_mount_logic"
 
   # ---------------------------------------------------------
   # 02. PREPARAZIONE BOOTLOADERS E UEFI
   # ---------------------------------------------------------
   - name: "coa-bootloaders"
     description: "Copia dei bootloader e creazione immagine FAT per UEFI"
-    command: "oa_shell"
+    action: "oa_shell"
     run_command: |
       set -e
       mkdir -p /home/eggs/isodir/live
@@ -46,14 +46,14 @@ remaster:
   # ---------------------------------------------------------
   - name: "coa-identity"
     description: "Gestione nativa identità (Purge & Inject stile Yocto)"
-    command: "oa_users"
+    action: "oa_users"
 
   # ---------------------------------------------------------
   # 04. ENABLE SUDO USER LIVE
   # ---------------------------------------------------------
   - name: "coa-enable-live"
     description: "Abilitazione poteri sudo per user live"
-    command: "oa_shell"
+    action: "oa_shell"
     run_command: |
       mkdir -p /etc/sudoers.d
       rm -f /etc/sudoers.d/00*
@@ -66,7 +66,7 @@ remaster:
   # ---------------------------------------------------------
   - name: "coa-initrd"
     description: "Generazione Initramfs dinamico tramite mkinitcpio (Arch)"
-    command: "oa_shell"
+    action: "oa_shell"
     run_command: |
       # 1. Backup della configurazione originale
       mv /etc/mkinitcpio.conf /etc/mkinitcpio.conf.bak
@@ -91,7 +91,7 @@ remaster:
   # ---------------------------------------------------------
   - name: "coa-kernel-copy"
     description: "Copia del Kernel e Initrd (auto-rilevamento Arch)"
-    command: "oa_shell"
+    action: "oa_shell"
     run_command: |
       # Troviamo dinamicamente il primo kernel e il suo initramfs principale (ignorando i fallback)
       KERNEL=$(ls /home/eggs/liveroot/boot/vmlinuz-* | head -n 1)
@@ -111,7 +111,7 @@ remaster:
   # ---------------------------------------------------------
   - name: "coa-live-menus"
     description: "Generazione configurazioni di boot (Kernel Arch style)"
-    command: "oa_shell"
+    action: "oa_shell"
     chroot: false
     run_command: |
       set -e
@@ -156,7 +156,7 @@ remaster:
   # ---------------------------------------------------------
   - name: "coa-squashfs"
     description: "Compressione del sistema (ZSTD)"
-    command: "oa_shell"
+    action: "oa_shell"
     run_command: "mksquashfs /home/eggs/liveroot /home/eggs/isodir/live/filesystem.squashfs -comp zstd -Xcompression-level 3 -b 1M -processors 4 -noappend -wildcards -ef /tmp/coa/excludes.list"
 
   # ---------------------------------------------------------
@@ -164,7 +164,7 @@ remaster:
   # ---------------------------------------------------------
   - name: "coa-arch-compat"
     description: "Creazione gancio di compatibilità per Archiso"
-    command: "oa_shell"
+    action: "oa_shell"
     run_command: |
       cd /home/eggs/isodir
       mkdir -p arch/x86_64
@@ -176,7 +176,7 @@ remaster:
   # ---------------------------------------------------------
   - name: "coa-xorriso"
     description: "Masterizzazione ISO finale"
-    command: "oa_shell"
+    action: "oa_shell"
     run_command: "xorriso -as mkisofs -iso-level 3 -R -J -joliet-long -l -cache-inodes -V 'OA_LIVE' -isohybrid-mbr /tmp/coa/bootloaders/ISOLINUX/isohdpfx.bin -partition_offset 16 -A 'OA_LIVE' -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e EFI/BOOT/efi.img -no-emul-boot -isohybrid-gpt-basdat -o ${ISO_OUTPUT} /home/eggs/isodir"
 
   # ---------------------------------------------------------
@@ -184,19 +184,19 @@ remaster:
   # ---------------------------------------------------------
   - name: "coa-cleanup"
     description: "Smontaggio e pulizia"
-    command: "oa_umount"
+    action: "oa_umount"
 
 # ==============================================================================
-# 01. PROFILO DI INSTALLAZIONE PER ARCH LINUX - LOGICA EVOLUTION
+# 01. PROFILO DI INSTALLAZIONE - LOGICA POST-COPY
 # ==============================================================================
 install:
-
   # ---------------------------------------------------------
   # 01. FINALIZZAZIONE SISTEMA
   # ---------------------------------------------------------
   - name: "finalize"
     description: "Generazione initramfs e configurazione GRUB"
-    command: |
+    action: "shell"        # Azione diretta senza wrapper
+    run_command: |         # Lo script specifico della distro
       # rimuove user live
       rm -f /etc/sudoers.d/00-live
 

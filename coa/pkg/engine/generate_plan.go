@@ -11,23 +11,24 @@ import (
 	"coa/pkg/utils"
 )
 
-// GeneratePlan converte lo YAML in JSON. Ora accetta anche stopAfter!
-func GeneratePlan(yamlSteps []pilot.YamlStep, familyID string, isRemaster bool, workPath string, finalIsoPath string, stopAfter string) (string, error) {
+// GeneratePlan converte lo YAML in JSON.
+// Nota: steps ora è di tipo []pilot.Step
+func GeneratePlan(steps []pilot.Step, familyID string, isRemaster bool, workPath string, finalIsoPath string, stopAfter string) (string, error) {
 	var plan OAPlan
 
+	// Teniamo l'utente di default come "salvagente" nel caso lo YAML non specifichi utenti
 	defaultUser := pilot.User{
 		Login:    "live",
 		Password: "$6$oa-tools$uTKAYeAVn.Y.Dy2To6HXsHt1Gt4HpMghmOV93a46jFY7hkAQ3tk7eRTKjcvSYDf5sOf3qnKzyyPYXurKp9ST3.",
 		Home:     "/home/live",
 		Shell:    "/bin/bash",
-		Groups:   []string{"sudo", "audio", "video", "cdrom", "plugdev", "netdev"},
 		UID:      1000,
 		GID:      1000,
 	}
 
 	var hitBreakpoint bool
 
-	for _, step := range yamlSteps {
+	for _, step := range steps {
 
 		if hitBreakpoint && step.Name != "coa-cleanup" {
 			continue
@@ -39,56 +40,76 @@ func GeneratePlan(yamlSteps []pilot.YamlStep, familyID string, isRemaster bool, 
 			currentRunCommand = strings.ReplaceAll(currentRunCommand, "${ISO_OUTPUT}", finalIsoPath)
 		}
 
-		// --- INFO DINAMICA: Mostriamo il nome reale nel log ---
+		// --- DESCRIZIONE DINAMICA ---
 		currentDescription := step.Description
 		if strings.Contains(currentDescription, "${ISO_NAME}") {
 			currentDescription = strings.ReplaceAll(currentDescription, "${ISO_NAME}", filepath.Base(finalIsoPath))
 		}
 
-		switch step.Command {
+		// Usiamo Action al posto di Command!
+		switch step.Action {
 
 		case "oa_mount_logic":
 			plan.Plan = append(plan.Plan, expandMountLogic(workPath)...)
 
 		case "oa_users":
+			// 1. Creazione Home directory
 			plan.Plan = append(plan.Plan, OATask{
-				Command:    "oa_shell",
-				Info:       "Creazione home directory da /etc/skel",
-				RunCommand: "mkdir -p " + workPath + "/liveroot/home/live && cp -a " + workPath + "/liveroot/etc/skel/. " + workPath + "/liveroot/home/live/",
+				Step: pilot.Step{
+					Action:      "oa_shell",
+					Description: "Creazione home directory da /etc/skel",
+					RunCommand:  fmt.Sprintf("mkdir -p %s/liveroot/home/live && cp -a %s/liveroot/etc/skel/. %s/liveroot/home/live/", workPath, workPath, workPath),
+				},
 			})
 
-			// Recuperiamo i gruppi "specchiati" dall'host (es. audio, video, docker, wheel)
+			// 2. Logica Utenti: Prendiamo gli utenti dallo YAML
+			usersToInject := step.Users
+
+			// Se lo YAML non ha utenti definiti, usiamo il salvagente
+			if len(usersToInject) == 0 {
+				usersToInject = []pilot.User{defaultUser}
+			}
+
+			// Recuperiamo i gruppi host specchiati (es. docker, libvirt, wheel)
 			mirroredGroups := utils.GetUserGroups()
 
-			// Iniettiamo i gruppi nell'utente di default prima di passarlo al piano
-			// In questo modo oa_users riceverà l'array JSON corretto
-			defaultUser.Groups = mirroredGroups
+			// Iniettiamo i gruppi specchiati negli utenti che stiamo per passare
+			for i := range usersToInject {
+				usersToInject[i].Groups = mirroredGroups
+			}
 
+			// 3. Invio ad oa
 			plan.Plan = append(plan.Plan, OATask{
-				Command:    "oa_users",
-				Info:       "Iniezione identità live/live",
+				Step: pilot.Step{
+					Action:      "oa_users",
+					Description: "Iniezione identità utenti live",
+					Users:       usersToInject, // Passaggio DIRETTO degli utenti dallo YAML!
+				},
 				PathLiveFs: workPath,
-				Users:      []pilot.User{defaultUser},
 			})
 
 		case "oa_umount":
 			plan.Plan = append(plan.Plan, OATask{
-				Command:    "oa_umount",
-				Info:       "Pulizia finale dei mount",
+				Step: pilot.Step{
+					Action:      "oa_umount",
+					Description: "Pulizia finale dei mount",
+				},
 				PathLiveFs: workPath,
 			})
 
 		default:
-			plan.Plan = append(plan.Plan, OATask{
-				Command:    step.Command,
-				Info:       currentDescription, // Usiamo la descrizione risolta
-				RunCommand: currentRunCommand,  // IMPORTANTE: Usiamo il comando risolto!
-				Chroot:     step.Chroot,
-				PathLiveFs: workPath,
-				Path:       step.Path,
-				Src:        step.Src,
-				Dst:        step.Dst,
-			})
+			// --- LA MAGIA DELL'EMBEDDING ---
+			// Invece di mappare 10 campi a mano, copiamo lo step intero.
+			task := OATask{
+				Step:       step,     // Eredita Action, Chroot, Path, Src, Dst, ecc.
+				PathLiveFs: workPath, // Campo specifico dell'Engine
+			}
+
+			// Sovrascriviamo solo i campi che abbiamo "risolto" con le variabili dinamiche
+			task.Description = currentDescription
+			task.RunCommand = currentRunCommand
+
+			plan.Plan = append(plan.Plan, task)
 		}
 
 		if stopAfter != "" && step.Name == stopAfter {
@@ -101,6 +122,7 @@ func GeneratePlan(yamlSteps []pilot.YamlStep, familyID string, isRemaster bool, 
 }
 
 func savePlan(plan OAPlan) (string, error) {
+	// ... (la funzione savePlan rimane identica a prima)
 	targetDir := "/tmp/coa"
 	targetFile := "oa-plan.json"
 	fullPath := filepath.Join(targetDir, targetFile)

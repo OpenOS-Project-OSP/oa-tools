@@ -89,9 +89,10 @@ func GenerateExcludeList(mode string) string {
 	// ==========================================================
 	// 5. Liste Utente (Custom)
 	// ==========================================================
-	userList := "/etc/coa/exclusion.list"
+	// Allineato al nuovo dialetto oa-tools
+	userList := "/etc/oa-tools.d/exclusion.list"
 	if _, err := os.Stat(userList); os.IsNotExist(err) {
-		userList = "conf/exclusion.list"
+		userList = "conf/exclusion.list" // Path di sviluppo
 	}
 
 	if data, err := os.ReadFile(userList); err == nil {

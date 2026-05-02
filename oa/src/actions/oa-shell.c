@@ -19,7 +19,7 @@
 int oa_shell(OA_Context *ctx) {
     cJSON *cmd_obj = cJSON_GetObjectItemCaseSensitive(ctx->task, "run_command");
     cJSON *chroot_obj = cJSON_GetObjectItemCaseSensitive(ctx->task, "chroot");
-    cJSON *info_obj = cJSON_GetObjectItemCaseSensitive(ctx->task, "info");
+    // cJSON *info_obj = cJSON_GetObjectItemCaseSensitive(ctx->task, "description");
 
     // ---> IL FIX È QUI <---
     // Cerca prima nel task, poi fai fallback sulla root globale

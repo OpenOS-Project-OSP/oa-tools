@@ -1,6 +1,29 @@
 # Changelog - oa-tools
 
-# Changelog - oa-tools
+# Release 0.7.4: The Great Refactoring
+
+Fedora is now aligned to the others distros: arch, debian and manjaro.
+
+This release marks a turning point for **oa-tools**. We have moved beyond chasing the specific quirks of individual distributions to build a universal, fluid, and frictionless infrastructure. 
+
+### 🏗️ Architectural Evolution
+The core has been surgically redesigned to separate concerns between the "Brain" and the "Muscle":
+
+*   **The Orchestrator (Go)**: Now acts as the project's intelligence. It parses profiles, manages logic, and generates a perfect "flight plan" (**oa-plan.json**). Its predictive logic prevents failures before they even begin.
+*   **The Engine (C)**: The `oa` binary is the operational arm. It consumes the JSON plan and interacts directly with the OS with the speed and precision of C, handling mounts, chroots, and identity injection in a secure, isolated environment.
+*   **Unified Dialect**: We have standardized how tasks are defined. The keys `action`, `description`, and `run_command` now drive every operation, making profiles significantly more readable and maintainable.
+
+### 🔮 Coming Soon: Profile Simplification
+While this release solidifies the backend, we are already looking ahead. **The next step is a massive simplification of the profile structure.** By implementing **Go Templates**, we will drastically reduce boilerplate code, allowing a single profile to adapt dynamically to different environments and architectures without manual duplication.
+
+### 🛠️ Technical Highlights
+| Feature | Description |
+| :--- | :--- |
+| **Cross-Distro Validated** | Full support for Debian (Trixie), Arch, Fedora, and Manjaro. |
+| **Robust Chroot Environment** | Automatic `PATH` handling and *UsrMerge* link replication to ensure post-install success. |
+| **JSON-Driven Execution** | Complete decoupling of task definition from operational execution. |
+| **Advanced Emergency Cleanup** | Improved "nest" clearing to ensure the system returns to a clean state after every run. |
+
 ## [0.7.3] - 2026-05-01
 
 ### **Core Improvements & Fixes**
