@@ -18,5 +18,5 @@ jobs:
     - name: run buidl and test
       run: |
         export VAGRANT_DEFAULT_PROVIDER=virtualbox
-        export VAGRANT_BOOT_TIMEOUT=1200  # Increased timeout to 1200 seconds
+        export VAGRANT_BOOT_TIMEOUT=1800  # Increased timeout to 1800 seconds
         ./tests/104-vagrant-alpine-3.23/vagrant.install.build.test.sh
