@@ -17,7 +17,7 @@ jobs:
 
     - name: Set up brain profile
       run: |
-        echo "BRIAN_PROFILE_PATH=/path/to/your/brain/profile" >> $GITHUB_ENV
+        echo "BRIAN_PROFILE_PATH=/vagrant/brain/profile" >> $GITHUB_ENV
 
     - name: run buidl and test
       run: |
