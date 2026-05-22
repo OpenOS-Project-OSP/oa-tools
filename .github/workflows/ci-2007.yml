@@ -22,4 +22,8 @@ jobs:
     - name: run build and test
       run: |
         source $GITHUB_ENV
+        if [ ! -f "$BRAIN_PROFILE_PATH" ]; then
+          echo "Brain profile not found at $BRAIN_PROFILE_PATH"
+          exit 1
+        fi
         ./tests/107-vagrant-fedora-43/vagrant.install.build.test.sh
