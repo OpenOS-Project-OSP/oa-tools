@@ -15,7 +15,11 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
+    - name: Install VirtualBox Guest Additions
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y virtualbox-guest-additions-iso
+
     - name: run buidl and test
       run: |
         ./tests/108-vagrant-opensuse-leap-15.6/vagrant.install.build.test.sh
-
