@@ -17,5 +17,6 @@ jobs:
 
     - name: run buidl and test
       run: |
+        export VAGRANT_DEFAULT_PROVIDER=virtualbox
+        export VAGRANT_BOOT_TIMEOUT=600
         ./tests/104-vagrant-alpine-3.23/vagrant.install.build.test.sh
-
