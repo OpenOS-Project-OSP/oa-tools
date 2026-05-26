@@ -1,19 +1,5 @@
 name: HW Detect CI
 
-# Validates the KPort hardware detection and build-environment layer on all
-# supported architectures (amd64, i386, arm64, riscv64).
-#
-# Two jobs:
-#   detect    — hw-detect.sh produces non-empty CPU/GPU/NPU fields
-#   build-env — hw-build-env.sh exports usable KPORT_* build variables
-#               and its --export / --json output modes are well-formed
-#
-# Runs on push/PR when detection or build scripts change, and weekly to catch
-# regressions from runner image updates.
-#
-# This file is managed by fork-sync-all/propagate-hw-detect.
-# Do not edit manually — changes will be overwritten on next sync.
-
 on:
   push:
     paths:
@@ -32,7 +18,7 @@ on:
       - scripts/kport/kport-toolchain.sh
       - config/hardware.conf.tpl
   schedule:
-    - cron: '0 6 * * 1'   # weekly Monday 06:00 UTC
+    - cron: '0 6 * * 1'
   workflow_dispatch: {}
 
 jobs:
@@ -47,7 +33,6 @@ jobs:
             runner: ubuntu-latest
           - arch: arm64
             runner: ubuntu-24.04-arm
-          # i386 and riscv64 run in QEMU via the native amd64 runner
           - arch: i386
             runner: ubuntu-latest
             qemu: true
@@ -64,6 +49,9 @@ jobs:
         with:
           platforms: ${{ matrix.arch }}
 
+      - name: Set CPU_ARCH environment variable
+        run: echo "CPU_ARCH=${{ matrix.arch }}" >> $GITHUB_ENV
+
       - name: Run hw-detect (native amd64 / arm64)
         if: ${{ matrix.qemu != true }}
         run: |
@@ -74,7 +62,6 @@ jobs:
           print('CPU_TIER:', d.get('CPU_TIER','?'))
           print('GPU_TIER:', d.get('GPU_TIER','?'))
           print('NPU_TIER:', d.get('NPU_TIER','?'))
-          # Validate required fields are present and non-empty
           for key in ['CPU_ARCH','CPU_TIER','GPU_TIER','NPU_TIER']:
               assert d.get(key), f'Missing or empty: {key}'
           print('All required fields present.')
@@ -130,7 +117,6 @@ jobs:
       - name: Validate --export output (native)
         if: ${{ matrix.qemu != true }}
         run: |
-          # --export must produce eval-able KEY=VALUE lines and set KPORT_* vars
           eval "$(bash scripts/hw-build-env.sh --export 2>/dev/null)"
           python3 - <<'EOF'
           import os, sys
