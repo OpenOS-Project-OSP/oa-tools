@@ -50,20 +50,21 @@ cd oa-tools
 ## CI
 
 <!-- AI:start:ci -->
-The repository uses GitHub Actions for continuous integration. Below are the workflows and their purposes:
+The repository uses GitHub Actions for continuous integration and automation. Below are the workflows and their purposes:
 
-- **ci-2001.yml**: Runs unit tests for the `oa` component. No secrets required.
-- **ci-2002.yml**: Builds the `oa` binary using the Makefile. No secrets required.
-- **ci-2003.yml**: Runs unit tests for the `coa` component. No secrets required.
-- **ci-2004.yml**: Builds the `coa` binary using Go. No secrets required.
-- **ci-2005.yml**: Generates documentation and shell completions for `coa`. No secrets required.
-- **ci-2006.yml**: Lints the C code in the `oa` directory. No secrets required.
-- **ci-2007.yml**: Lints the Go code in the `coa` directory. No secrets required.
-- **ci-2008.yml**: Runs integration tests for both `oa` and `coa`. No secrets required.
-- **ci-2009.yml**: Builds native packages (`.deb`, `.rpm`, `.pkg.tar.zst`). No secrets required.
-- **ci-2010.yml**: Verifies package integrity and signatures. Requires `SIGNING_KEY` secret.
-- **ci-2011.yml**: Deploys artifacts to a release. Requires `GITHUB_TOKEN` secret.
-- **ci-2012.yml**: Cleans up temporary files and artifacts. No secrets required.
+- **ci-2001.yml to ci-2012.yml**: Run various CI pipelines for testing and building components (`oa` and `coa`) across different configurations.
+- **cleanup-branches.yml**: Remove stale branches from the repository.
+- **cleanup-pollution.yml**: Clean up temporary files and artifacts generated during workflows.
+- **mirror-orgs-full.yml**: Perform a full synchronization of organization repositories.
+- **mirror-osp-to-gitlab.yml**: Mirror repositories from the OSP namespace to GitLab.
+- **notify-poller.yml**: Notify external systems about workflow events.
+- **rotate-token.yml**: Rotate authentication tokens used in workflows.
+- **validate-config.yml**: Validate configuration files for correctness.
+
+Required secrets:
+- `GITHUB_TOKEN`: Default GitHub token for repository access.
+- `CI_PAT`: Personal access token for external repository interactions.
+- `GITLAB_TOKEN`: Token for GitLab API access during mirroring workflows.
 <!-- AI:end:ci -->
 
 ## Mirror chain
@@ -83,9 +84,11 @@ Direct commits to OSP or OOC are detected and opened as PRs back to `Interested-
 ## Contributors
 
 <!-- AI:start:contributors -->
-- [@pieroproietti](https://github.com/pieroproietti): 375 commits  
-- [@gnuhub](https://github.com/gnuhub): 36 commits  
-- [@Interested-Deving-1896](https://github.com/Interested-Deving-1896): 2 commits  
+[@pieroproietti](https://github.com/pieroproietti): 375 commits  
+[@Interested-Deving-1896](https://github.com/Interested-Deving-1896): 205 commits  
+[@gnuhub](https://github.com/gnuhub): 36 commits  
+
+*Note: This repository is a mirror. Please refer to the upstream source for the original project.*
 <!-- AI:end:contributors -->
 
 ## Origins
