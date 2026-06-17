@@ -36,6 +36,7 @@ concurrency:
 permissions:
   contents: write
   actions: read  # Added permission to read actions and repository metadata
+  metadata: read  # Added permission to read repository metadata
 
 jobs:
   create:
