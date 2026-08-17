@@ -13,9 +13,8 @@ jobs:
     timeout-minutes: 120
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: run buidl and test
       run: |
         ./tests/106-vagrant-centos-10-stream/vagrant.install.build.test.sh
-
