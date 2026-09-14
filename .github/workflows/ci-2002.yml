@@ -13,9 +13,8 @@ jobs:
     timeout-minutes: 120
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: run buidl and test
       run: |
         ./tests/102-vagrant-debian-13/vagrant.install.build.test.sh
-
